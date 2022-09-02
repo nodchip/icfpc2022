@@ -11,8 +11,8 @@ Size Canvas::size() const {
   return { width, height };
 }
 
-std::vector<std::shared_ptr<Block>> Canvas::simplify() const {
-  std::vector<std::shared_ptr<Block>> simplifiedBlocks;
+std::vector<std::shared_ptr<SimpleBlock>> Canvas::simplify() const {
+  std::vector<std::shared_ptr<SimpleBlock>> simplifiedBlocks;
   for (const auto& [id, block] : blocks) {
     for (const auto& child : block->getChildren()) {
       simplifiedBlocks.push_back(child);
