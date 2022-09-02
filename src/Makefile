@@ -36,7 +36,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=
+SRCS+=block.cpp canvas.cpp instruction.cpp parser.cpp point.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
