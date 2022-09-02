@@ -36,7 +36,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp parser.cpp point.cpp
+SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp instruction_cost_calculator.cpp interpreter.cpp painter.cpp parser.cpp point.cpp program.cpp similarity_checker.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
@@ -72,7 +72,7 @@ TEST_OBJS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 TEST_DEPS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 $(TEST_OBJS): CXXFLAGS+=$(TEST_CXXFLAGS)
 
-TARGETS=solver judge test # test_mpir
+TARGETS=solver test # judge test_mpir
 
 .PHONY: all
 all: dirs $(TARGETS)
@@ -97,11 +97,11 @@ $(BUILD_PATH)/%.o: %.cpp $(PCH_OUT)
 solver: $(MAIN_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
-judge: $(JUDGE_OBJS) $(SOLVER_OBJS)
-	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
+#judge: $(JUDGE_OBJS) $(SOLVER_OBJS)
+#	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
-test_mpir: $(TEST_MPIR_OBJS)
-	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
+#test_mpir: $(TEST_MPIR_OBJS)
+#	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
 test: $(GTEST_SRCS) $(TEST_OBJS) $(OBJS)
 	$(CXX) $(TEST_CXXFLAGS) $^ -o $@ $(TEST_LDFLAGS)
