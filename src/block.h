@@ -17,6 +17,7 @@ struct Block
 
   Block(BlockType typ, const std::string& id, const Point& bottomLeft, const Point& topRight);
 
+  virtual std::vector<std::shared_ptr<Block>> getChildren() const = 0;
   virtual ~Block() = default;
 
 };
@@ -31,7 +32,7 @@ struct ComplexBlock : public Block
     const std::vector<std::shared_ptr<Block>>& subBlocks
   );
 
-  std::vector<std::shared_ptr<Block>> getChildren() const;
+  std::vector<std::shared_ptr<Block>> getChildren() const override;
 
 };
 
@@ -42,6 +43,6 @@ struct SimpleBlock : public Block
 
   SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color);
 
-  std::vector<std::shared_ptr<Block>> getChildren() const;
+  std::vector<std::shared_ptr<Block>> getChildren() const override;
 
 };
