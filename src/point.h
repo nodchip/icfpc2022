@@ -2,6 +2,6 @@
 
 struct Point
 {
-    int px;
-    int py;
+  int px;
+  int py;
 };

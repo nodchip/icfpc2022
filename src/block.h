@@ -2,7 +2,7 @@
 
 struct Block
 {
-    virtual ~Block() = default;
+  virtual ~Block() = default;
 };
 
 struct ComplexBlock : public Block

@@ -7,5 +7,5 @@
 
 struct Parser
 {
-    bool Parse(const std::string& code, std::vector<std::shared_ptr<Instruction>>& program);
+  bool Parse(const std::string& code, std::vector<std::shared_ptr<Instruction>>& program);
 };
