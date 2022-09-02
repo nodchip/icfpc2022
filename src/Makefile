@@ -36,7 +36,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=block.cpp canvas.cpp instruction.cpp parser.cpp point.cpp
+SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp parser.cpp point.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
@@ -67,7 +67,7 @@ GTEST_SRCS=$(GTEST_DIR)/src/gtest-all.cc $(GTEST_DIR)/src/gtest_main.cc
 TEST_BUILD_PATH=build/tests
 TEST_CXXFLAGS=-I$(GTEST_DIR) -I$(GTEST_DIR)/include
 TEST_LDFLAGS=$(LDFLAGS) -lpthread
-TEST_SRCS=$(wildcard tests/*.cpp)
+TEST_SRCS=$(wildcard tests/*.cpp) $(SRCS)
 TEST_OBJS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 TEST_DEPS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 $(TEST_OBJS): CXXFLAGS+=$(TEST_CXXFLAGS)
