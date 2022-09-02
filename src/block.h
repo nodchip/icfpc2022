@@ -38,9 +38,9 @@ struct ComplexBlock : public Block
 struct SimpleBlock : public Block
 {
 
-  Color color;
+  RGBA color;
 
-  SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const Color& color);
+  SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color);
 
   std::vector<std::shared_ptr<Block>> getChildren() const;
 

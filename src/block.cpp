@@ -14,7 +14,7 @@ std::vector<std::shared_ptr<Block>> ComplexBlock::getChildren() const {
   return subBlocks;
 }
 
-SimpleBlock::SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const Color& color)
+SimpleBlock::SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color)
   : Block(BlockType::SimpleBlockType, id, bottomLeft, topRight), color(color)
 {
   size = topRight.getDiff(bottomLeft);
