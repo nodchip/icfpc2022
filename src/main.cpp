@@ -7,6 +7,7 @@
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
 
+#include "painter.h"
 #include "solver_registry.h"
 
 int main(int argc, char* argv[]) {
@@ -47,8 +48,11 @@ int main(int argc, char* argv[]) {
       return 0;
     }
 
-    PaintingPtr problem = nullptr; // TODO: load Painting
-    LOG(INFO) << fmt::format("Problem  : {}", problem_file);
+    std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
+    if (!problem) {
+      LOG(ERROR) << fmt::format("failed to load problem {}", problem_file);
+    }
+    LOG(INFO) << fmt::format("Problem  : {} ({}x{})", problem_file, problem->width, problem->height);
 
     std::vector<std::shared_ptr<Instruction>> initial_solution;
     if (std::filesystem::exists(initial_solution_isl)) {

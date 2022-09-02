@@ -6,9 +6,8 @@
 #include <cassert>
 
 #include "instruction.h"
+#include "painter.h"
 
-struct Painting {}; // STUB
-using PaintingPtr = std::shared_ptr<Painting>;
 
 struct SolverArguments {
   SolverArguments(PaintingPtr painting) : painting(painting) {}
