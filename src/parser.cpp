@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "parser.h"
 
-bool Parser::Parse(const std::string& code, std::vector<std::shared_ptr<Instruction>>& program)
+std::shared_ptr<ParseResult> Parser::Parse(const std::string& code)
 {
   // TODO(nodchip): Implement.
-  return false;
+  return nullptr;
 }

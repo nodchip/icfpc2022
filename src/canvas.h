@@ -4,6 +4,9 @@
 #include <memory>
 
 #include "block.h"
+#include "color.h"
+
+using Color = RGBA;
 
 struct Canvas
 {
