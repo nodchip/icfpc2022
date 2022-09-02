@@ -108,6 +108,7 @@
     <ClCompile Include="..\..\src\instruction_cost_calculator.cpp" />
     <ClCompile Include="..\..\src\interpreter.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\painter.cpp" />
     <ClCompile Include="..\..\src\parser.cpp" />
     <ClCompile Include="..\..\src\point.cpp" />
     <ClCompile Include="..\..\src\program.cpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="..\..\src\instruction.h" />
     <ClInclude Include="..\..\src\instruction_cost_calculator.h" />
     <ClInclude Include="..\..\src\interpreter.h" />
+    <ClInclude Include="..\..\src\painter.h" />
     <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\point.h" />
     <ClInclude Include="..\..\src\program.h" />
