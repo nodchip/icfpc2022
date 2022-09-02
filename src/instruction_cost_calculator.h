@@ -1,9 +1,4 @@
 #pragma once
+#include <instruction.h>
 
-struct RGBA
-{
-  int r;
-  int g;
-  int b;
-  int a;
-};
+int getCost(const Instruction& instruction, int blockSize, int canvasSize);

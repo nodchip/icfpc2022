@@ -96,6 +96,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\instruction.cpp" />
+    <ClCompile Include="..\..\src\instruction_cost_calculator.cpp" />
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
     <ClCompile Include="..\..\src\tests\test_instruction.cpp" />
     <ClCompile Include="..\stdafx.cpp">
@@ -109,6 +110,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\color.h" />
     <ClInclude Include="..\..\src\instruction.h" />
+    <ClInclude Include="..\..\src\instruction_cost_calculator.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
