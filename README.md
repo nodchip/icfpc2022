@@ -15,12 +15,7 @@ ICFPC2022 sanma team repository
 git clone --recursive https://github.com/nodchip/icfpc2022.git
 # if you forgot to clone with --recursive, try: git submodule update --init
 cd icfpc2022
-bash libs/build.sh # to build external libraries
-bash libs/build_local.sh # required only once
-cd src
-make -Bj # rebuild all in parallel.
-make solver # or if you wish to build only the solver
-make test # or if you wish to build only tests
+bash build.sh
 ```
 
 ### GUI on WSL
@@ -34,7 +29,6 @@ git clone --recursive https://github.com/nodchip/icfpc2022.git
 open Visual Studio 2022 Developer Console
 cd icfpc2022
 libs/build.bat # to build external libraries (Debug and Release)
-libs/build_local.bat # required only once
 start vs/ICFPC2022.sln
 select Release;x64 or Debug;x64
 Build Solution
