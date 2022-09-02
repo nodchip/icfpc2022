@@ -13,6 +13,10 @@ struct ProgramMetaData
 };
 
 struct Program {
+
   ProgramMetaData metaData;
   std::vector<std::shared_ptr<Instruction>> instructions;
+
+  Program(const ProgramMetaData& metaData, const std::vector<std::shared_ptr<Instruction>>& instructions);
+
 };
