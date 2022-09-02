@@ -65,3 +65,6 @@ struct MergeInstruction : public Instruction
   int getBaseCost() const override { return 1; }
   std::string toString() const override;
 };
+
+bool dumpInstructions(const std::string& file_path, const std::vector<std::shared_ptr<Instruction>>& instructions);
+

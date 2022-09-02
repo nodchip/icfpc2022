@@ -113,6 +113,8 @@
     <ClCompile Include="..\..\src\point.cpp" />
     <ClCompile Include="..\..\src\program.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
+    <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
+    <ClCompile Include="..\..\src\solver_registry.cpp" />
     <ClCompile Include="..\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -133,7 +135,9 @@
     <ClInclude Include="..\..\src\point.h" />
     <ClInclude Include="..\..\src\program.h" />
     <ClInclude Include="..\..\src\similarity_checker.h" />
+    <ClInclude Include="..\..\src\solver_registry.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
