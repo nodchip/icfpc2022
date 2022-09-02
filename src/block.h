@@ -39,6 +39,8 @@ struct ComplexBlock
 
   std::vector<std::shared_ptr<SimpleBlock>> getChildren() const;
 
+  std::vector<std::shared_ptr<SimpleBlock>> offsetChildren(const Point& newBottomLeft) const;
+
 };
 
 

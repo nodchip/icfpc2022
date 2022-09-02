@@ -19,4 +19,8 @@ struct Point
 
   int getScalarSize() const;
 
+  Point add(const Point& otherPoint) const;
+
+  Point subtract(const Point& otherPoint) const;
+
 };

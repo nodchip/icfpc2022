@@ -23,3 +23,11 @@ bool Point::isInside(const Point& bottomLeft, const Point& topRight) const {
 }
 
 int Point::getScalarSize() const { return px * py; }
+
+Point Point::add(const Point& otherPoint) const {
+  return Point(px + otherPoint.px, py + otherPoint.py);
+}
+
+Point Point::subtract(const Point& otherPoint) const {
+  return Point(px - otherPoint.px, py - otherPoint.py);
+}

@@ -28,3 +28,16 @@ ComplexBlock::ComplexBlock(
 std::vector<std::shared_ptr<SimpleBlock>> ComplexBlock::getChildren() const {
   return subBlocks;
 }
+
+std::vector<std::shared_ptr<SimpleBlock>> ComplexBlock::offsetChildren(const Point& newBottomLeft) const {
+    std::vector<std::shared_ptr<SimpleBlock>> newChildren;
+    for (const auto& block : subBlocks) {
+        newChildren.push_back(std::make_shared<SimpleBlock>(
+            "child",
+            block->bottomLeft.add(newBottomLeft).subtract(bottomLeft),
+            block->topRight.add(newBottomLeft).subtract(bottomLeft),
+            block->color
+            ));
+    }
+    return newChildren;
+}
