@@ -80,7 +80,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -103,7 +103,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\block.cpp" />
     <ClCompile Include="..\..\src\canvas.cpp" />
+    <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\instruction.cpp" />
+    <ClCompile Include="..\..\src\interpreter.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\parser.cpp" />
     <ClCompile Include="..\..\src\point.cpp" />
@@ -118,7 +120,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\block.h" />
     <ClInclude Include="..\..\src\canvas.h" />
+    <ClInclude Include="..\..\src\color.h" />
     <ClInclude Include="..\..\src\instruction.h" />
+    <ClInclude Include="..\..\src\interpreter.h" />
     <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\point.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
