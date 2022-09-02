@@ -70,7 +70,7 @@
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /D $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
+      <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -96,7 +96,7 @@
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY /D $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glog.* $(OutputPath)
+      <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glog.* $(OutputPath)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
