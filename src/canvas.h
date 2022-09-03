@@ -14,7 +14,7 @@ struct Canvas
   int width;
   int height;
   Color backgroundColor;
-  std::map<std::string, std::shared_ptr<SimpleBlock>> blocks;
+  std::map<std::string, std::shared_ptr<Block>> blocks;
 
   Canvas(int width, int height, const Color& backgroundColor);
 

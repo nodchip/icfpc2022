@@ -4,9 +4,8 @@
 #include "block.h"
 
 SimpleBlock::SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color)
-  : typ(BlockType::SimpleBlockType), id(id), bottomLeft(bottomLeft), topRight(topRight), color(color)
+  : Block(BlockType::SimpleBlockType, id, bottomLeft, topRight), color(color)
 {
-  size = topRight.getDiff(bottomLeft);
   assert(bottomLeft.px <= topRight.px && bottomLeft.py <= topRight.py);
   assert(size.getScalarSize() > 0);
 }
@@ -17,10 +16,7 @@ std::vector<std::shared_ptr<SimpleBlock>> SimpleBlock::getChildren() const {
   return children;
 }
 
-ComplexBlock::ComplexBlock(
-  const std::string& id, const Point& bottomLeft, const Point& topRight,
-  const std::vector<std::shared_ptr<SimpleBlock>>& subBlocks
-) : typ(BlockType::ComplexBlockType), id(id), bottomLeft(bottomLeft), topRight(topRight), subBlocks(subBlocks)
+ComplexBlock::ComplexBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const std::vector<std::shared_ptr<SimpleBlock>>& subBlocks) : Block(BlockType::ComplexBlockType, id, bottomLeft, topRight), subBlocks(subBlocks)
 {
   assert(size.getScalarSize() > 0);
 }
@@ -41,3 +37,6 @@ std::vector<std::shared_ptr<SimpleBlock>> ComplexBlock::offsetChildren(const Poi
     }
     return newChildren;
 }
+
+Block::Block(BlockType typ, const std::string& id, const Point& bottomLeft, const Point& topRight)
+  : typ(typ), id(id), bottomLeft(bottomLeft), topRight(topRight), size(topRight.getDiff(bottomLeft)) {}
