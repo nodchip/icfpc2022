@@ -1,4 +1,4 @@
-# data/problems/*.png ‚ğ ƒeƒLƒXƒgŒ`®‚É•ÏŠ·‚·‚é
+# data/problems/*.png ã‚’ ãƒ†ã‚­ã‚¹ãƒˆå½¢å¼ã«å¤‰æ›ã™ã‚‹
 import sys
 import os
 import glob
