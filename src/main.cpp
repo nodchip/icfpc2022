@@ -53,10 +53,41 @@ int main(int argc, char* argv[]) {
   sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
-
   SolverRegistry::setOptionParser(sub_solve);
 
+  auto sub_eval = app.add_subcommand("eval");
+  sub_eval->add_option("problem_file", problem_file, "problem file path");
+  sub_eval->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
+
   CLI11_PARSE(app, argc, argv);
+
+  auto loadProblem = [&] {
+    std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
+    if (!problem) {
+      LOG(ERROR) << fmt::format("failed to load problem {}", problem_file);
+      assert(false);
+    }
+    LOG(INFO) << fmt::format("Problem  : {} ({}x{})", problem_file, problem->width, problem->height);
+    return problem;
+  };
+
+  auto loadSolution = [&](const Painting& problem) {
+    std::vector<std::shared_ptr<Instruction>> initial_solution;
+    if (!initial_solution_isl.empty()) {
+      if (!std::filesystem::exists(initial_solution_isl)) {
+        LOG(ERROR) << fmt::format("initial solution not found {}", initial_solution_isl);
+        assert(false);
+      }
+      auto program = Parser().ParseFile(initial_solution_isl, ProgramMetaData { problem.width, problem.height, RGBA(0, 0, 0, 0) });
+      if (!program) {
+        LOG(ERROR) << fmt::format("failed to parse initial solution {}", initial_solution_isl);
+        assert(false);
+      }
+      initial_solution = program->instructions;
+      LOG(INFO) << fmt::format("Initial Solution  : {} ({} instructions)", initial_solution_isl, initial_solution.size());
+    }
+    return initial_solution;
+  };
 
   if (sub_solve->parsed()) {
     std::vector<std::string> solver_name_list;
@@ -69,27 +100,8 @@ int main(int argc, char* argv[]) {
       return -1;
     }
 
-    std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
-    if (!problem) {
-      LOG(ERROR) << fmt::format("failed to load problem {}", problem_file);
-      return -1;
-    }
-    LOG(INFO) << fmt::format("Problem  : {} ({}x{})", problem_file, problem->width, problem->height);
-
-    std::vector<std::shared_ptr<Instruction>> initial_solution;
-    if (!initial_solution_isl.empty()) {
-      if (!std::filesystem::exists(initial_solution_isl)) {
-        LOG(ERROR) << fmt::format("initial solution not found {}", initial_solution_isl);
-        return -1;
-      }
-      auto program = Parser().ParseFile(initial_solution_isl, ProgramMetaData { problem->width, problem->height, RGBA(0, 0, 0, 0) });
-      if (!program) {
-        LOG(ERROR) << fmt::format("failed to parse initial solution {}", initial_solution_isl);
-        return -1;
-      }
-      initial_solution = program->instructions;
-      LOG(INFO) << fmt::format("Initial Solution  : {} ({} instructions)", initial_solution_isl, initial_solution.size());
-    }
+    std::shared_ptr<Painting> problem = loadProblem();
+    std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
 
     SolverArguments arg(problem);
     arg.optional_initial_solution = initial_solution;
@@ -119,7 +131,7 @@ int main(int argc, char* argv[]) {
         return -1;
       }
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
-      LOG(INFO) << fmt::format("Sim. Cost  : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
+      LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
 
       // successive processing.
@@ -131,6 +143,20 @@ int main(int argc, char* argv[]) {
     dumpInstructions(output_solution_isl, out.solution);
     LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), output_solution_isl);
 
+    return 0;
+  }
+
+  if (sub_eval->parsed()) {
+    std::shared_ptr<Painting> problem = loadProblem();
+    std::vector<std::shared_ptr<Instruction>> solution = loadSolution(*problem);
+    auto cost = computeCost(*problem, solution);
+    if (!cost) {
+      LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
+      return -1;
+    }
+    LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
+    LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
+    LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
     return 0;
   }
 
