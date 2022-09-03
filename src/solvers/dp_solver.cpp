@@ -69,12 +69,12 @@ class DpSolver : public SolverBase {
   DpSolver() = default;
   SolverOutputs solve(const SolverArguments& args) override {
     const int ppg = getOption<Option>()->pixel_per_grid;
-    const auto& target = *args.painting;
-    assert(target.width % ppg == 0);
-    assert(target.height % ppg == 0);
+    target_ = args.painting.get();
+    assert(target_->width % ppg == 0);
+    assert(target_->height % ppg == 0);
 
-    const int width = target.width / ppg;
-    const int height = target.height / ppg;
+    const int width = target_->width / ppg;
+    const int height = target_->height / ppg;
     dp_.resize(height, V3State(width, V2State(height + 1, VState(width + 1))));
     for (int gy = 0; gy < height; ++gy) {
       for (int gx = 0; gx < width; ++gx) {
@@ -83,7 +83,7 @@ class DpSolver : public SolverBase {
         const int x1 = (gx + 1) * ppg;
         const int y1 = (gy + 1) * ppg;
 
-        const auto [avg, similarity] = GetBestRGBA(target, x0, y0, x1, y1);
+        const auto [avg, similarity] = GetBestRGBA(*target_, x0, y0, x1, y1);
         auto& state = dp_[gy][gx][gy + 1][gx + 1];
         state.x0 = x0;
         state.y0 = y0;
@@ -95,14 +95,14 @@ class DpSolver : public SolverBase {
                      state.similarity;
       }
     }
+    auto&& best = SolveDp(0, 0, dp_[0].size(), dp_.size());
+
     SolverOutputs ret;
-    auto&& best = SolveDp(0, 0, width, height);
     const auto comment_instruction = std::make_shared<CommentInstruction>("");
-    comment_instruction->comment = fmt::format("cost = {0}", best.cost);
+    comment_instruction->comment = fmt::format("Total cost = {0}", best.cost);
     LOG(INFO) << comment_instruction->comment;
     ret.solution.push_back(comment_instruction);
     best.UpdateOutput("0", ret);
-    LOG(INFO) << "Total cost: " << best.cost;
     return ret;
   }
 
@@ -112,60 +112,48 @@ class DpSolver : public SolverBase {
     if (state.cost > 0) {
       return state;
     }
-    if (y0 == y1 || x0 == x1) {
-      assert(false);
-      state.cost = 1e+10;
-      state.instruction = std::make_shared<Instruction>();
-      return state;
-    }
+    state.x0 = dp_[y0][x0][y0 + 1][x0 + 1].x0;
+    state.y0 = dp_[y0][x0][y0 + 1][x0 + 1].y0;
+    state.x1 = dp_[y1 - 1][x1 - 1][y1][x1].x1;
+    state.y1 = dp_[y1 - 1][x1 - 1][y1][x1].y1;
     const double base_ratio =
         dp_.size() * dp_[0].size() / ((y1 - y0) * (x1 - x0));
 
-    // Try X-line cut
+    // color [<blockId>] [<rgba>]
+    const auto [color, similarity] =
+        GetBestRGBA(*target_, state.x0, state.y0, state.x1, state.y1);
+    state.similarity = similarity;
+    state.instruction = std::make_shared<ColorInstruction>("", color);
+    state.cost = state.similarity + ColorInstruction::kBaseCost * base_ratio;
+
+    // cut [<blockId>] [X] [<x>]
     for (int x = x0 + 1; x < x1; ++x) {
       auto& state0 = SolveDp(x0, y0, x, y1);
       auto& state1 = SolveDp(x, y0, x1, y1);
-      if (IsSameColorPaint(state0, state1)) {
-        state.instruction = std::make_shared<ColorInstruction>(
-            "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
-                    ->color);
-        state.similarity = state0.similarity + state1.similarity;
-        state.cost =
-            state.similarity + state.instruction->getBaseCost() * base_ratio;
-        return state;
-      }
-
       double cost = VerticalCutInstruction::kBaseCost * base_ratio +
                     state0.cost + state1.cost;
-      if (state.cost < 0 || cost < state.cost) {
+      if (cost < state.cost) {
         state.cost = cost;
-        state.instruction = std::make_shared<VerticalCutInstruction>(
-            "", x * getOption<Option>()->pixel_per_grid);
+        state.instruction =
+            std::make_shared<VerticalCutInstruction>("", state1.x0);
+        state.similarity = state0.similarity + state1.similarity;
         state.children.clear();
         state.children.push_back(&state0);
         state.children.push_back(&state1);
       }
     }
-    // Try Y-line cut
+
+    // cut [<blockId>] [Y] [<y>]
     for (int y = y0 + 1; y < y1; ++y) {
       auto& state0 = SolveDp(x0, y0, x1, y);
       auto& state1 = SolveDp(x0, y, x1, y1);
-      if (IsSameColorPaint(state0, state1)) {
-        state.instruction = std::make_shared<ColorInstruction>(
-            "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
-                    ->color);
-        state.similarity = state0.similarity + state1.similarity;
-        state.cost =
-            state.similarity + state.instruction->getBaseCost() * base_ratio;
-        return state;
-      }
-
       double cost = HorizontalCutInstruction::kBaseCost * base_ratio +
                     state0.cost + state1.cost;
-      if (state.cost < 0 || cost < state.cost) {
+      if (cost < state.cost) {
         state.cost = cost;
-        state.instruction = std::make_shared<HorizontalCutInstruction>(
-            "", y * getOption<Option>()->pixel_per_grid);
+        state.instruction =
+            std::make_shared<HorizontalCutInstruction>("", state1.y0);
+        state.similarity = state0.similarity + state1.similarity;
         state.children.clear();
         state.children.push_back(&state0);
         state.children.push_back(&state1);
@@ -173,16 +161,6 @@ class DpSolver : public SolverBase {
     }
 
     return state;
-  }
-
-  bool IsSameColorPaint(const State& state0, const State& state1) {
-    if (state0.instruction->getBaseCost() != ColorInstruction::kBaseCost ||
-        state1.instruction->getBaseCost() != ColorInstruction::kBaseCost) {
-      return false;
-    }
-    auto c0 = std::dynamic_pointer_cast<ColorInstruction>(state0.instruction);
-    auto c1 = std::dynamic_pointer_cast<ColorInstruction>(state1.instruction);
-    return c0->color == c1->color;
   }
 
   static std::tuple<RGBA, double> GetBestRGBA(const Painting& painting,
@@ -198,27 +176,19 @@ class DpSolver : public SolverBase {
       }
     }
 
-    double sum_r = 0;
-    double sum_g = 0;
-    double sum_b = 0;
-    double sum_a = 0;
+    std::array<double, 4> sum_rgba;
     int count = 0;
     for (auto&& cc : color_count) {
       auto&& color = cc.first;
-      const int n = cc.second;
-      sum_r += color[0] * n;
-      sum_g += color[1] * n;
-      sum_b += color[2] * n;
-      sum_a += color[3] * n;
+      const double n = cc.second;
+      for (int i = 0; i < 4; ++i) {
+        sum_rgba[i] += color[i] * n;
+      }
       count += n;
     }
 
-    int avg_r = std::round(sum_r / count);
-    int avg_g = std::round(sum_g / count);
-    int avg_b = std::round(sum_b / count);
-    int avg_a = std::round(sum_a / count);
-    RGBA avg(avg_r, avg_g, avg_b, avg_a);
-
+    RGBA avg(std::round(sum_rgba[0] / count), std::round(sum_rgba[1] / count),
+             std::round(sum_rgba[2] / count), std::round(sum_rgba[3] / count));
     double similarity = 0;
     for (auto&& cc : color_count) {
       auto&& color = cc.first;
@@ -230,6 +200,7 @@ class DpSolver : public SolverBase {
   }
 
   V4State dp_;
+  Painting* target_;
 };
 
 REGISTER_SOLVER_WITH_OPTION("DpSolver", DpSolver, DpSolver::Option);
