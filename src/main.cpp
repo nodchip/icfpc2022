@@ -134,9 +134,9 @@ int main(int argc, char* argv[]) {
     auto output_phase_file_path = [output_solution_isl](int phase) {
       auto ext = output_solution_isl.find(".isl");
       if (ext != std::string::npos) {
-        return fmt::format("{}.{}.isl", output_solution_isl.substr(0, ext), phase);
+        return fmt::format("{}.phase{}.isl", output_solution_isl.substr(0, ext), phase);
       } else {
-        return fmt::format("{}.{}", output_solution_isl, phase);
+        return fmt::format("{}.phase{}", output_solution_isl, phase);
       }
     };
 
