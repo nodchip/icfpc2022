@@ -167,7 +167,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
         continue;
       }
       // Case 5
-      if (point.isInside(subBlock->bottomLeft, subBlock->topRight)) {
+      if (point.isStrictryInside(subBlock->bottomLeft, subBlock->topRight)) {
         bottomLeftBlocks.push_back(std::make_shared<SimpleBlock>(
           "bl_child",
           subBlock->bottomLeft,
@@ -197,7 +197,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
       // Case 2
       if (subBlock->bottomLeft.px <= point.px
         && point.px <= subBlock->topRight.px
-        && point.py < subBlock->bottomLeft.py) {
+        && point.py <= subBlock->bottomLeft.py) {
         topLeftBlocks.push_back(std::make_shared<SimpleBlock>(
           "case2_tl_child",
           subBlock->bottomLeft,
@@ -215,7 +215,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
       // Case 8
       if (subBlock->bottomLeft.px <= point.px
         && point.px <= subBlock->topRight.px
-        && point.py > subBlock->topRight.py) {
+        && point.py >= subBlock->topRight.py) {
         bottomLeftBlocks.push_back(std::make_shared<SimpleBlock>(
           "case8_bl_child",
           subBlock->bottomLeft,
@@ -233,7 +233,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
       // Case 4
       if (subBlock->bottomLeft.py <= point.py
         && point.py <= subBlock->topRight.py
-        && point.px < subBlock->bottomLeft.px) {
+        && point.px <= subBlock->bottomLeft.px) {
         bottomRightBlocks.push_back(std::make_shared<SimpleBlock>(
           "case4_br_child",
           subBlock->bottomLeft,
@@ -251,7 +251,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
       // Case 6
       if (subBlock->bottomLeft.py <= point.py
         && point.py <= subBlock->topRight.py
-        && point.px > subBlock->topRight.px) {
+        && point.px >= subBlock->topRight.px) {
         bottomLeftBlocks.push_back(std::make_shared<SimpleBlock>(
           "case6_bl_child",
           subBlock->bottomLeft,
