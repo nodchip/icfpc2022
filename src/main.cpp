@@ -65,6 +65,21 @@ int main(int argc, char* argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
+  auto loadInitialConfiguration = [&] {
+    std::string config_path = problem_file;
+    config_path.replace(config_path.find(".txt"), 4, ".initial.json");
+    std::shared_ptr<Canvas> canvas;
+    if (std::filesystem::exists(config_path)) {
+      canvas = loadCanvasFromJSONFile(config_path);
+      if (!canvas) {
+        LOG(ERROR) << fmt::format("failed to load config {}", config_path);
+        assert(false);
+      }
+      LOG(INFO) << fmt::format("Config  : {} ({} blocks)", config_path, canvas->blocks.size());
+    }
+    return canvas;
+  };
+
   auto loadProblem = [&] {
     std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
     if (!problem) {
@@ -110,6 +125,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::shared_ptr<Painting> problem = loadProblem();
+    std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(); // may not exist
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
     if (!initial_solution.empty()) {
       auto cost = computeCost(*problem, initial_solution);
@@ -123,7 +139,7 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
     }
 
-    SolverArguments arg(problem);
+    SolverArguments arg(problem, initial_canvas);
     arg.optional_initial_solution = initial_solution;
     arg.visualize = visualize;
     if (timeout_s > 0) {

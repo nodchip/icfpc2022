@@ -22,7 +22,7 @@ std::vector<std::shared_ptr<SimpleBlock>> Canvas::simplify() const {
   return simplifiedBlocks;
 }
 
-std::shared_ptr<Canvas> loadCanvasFromJSONFile(const std::string& file_path) {
+CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
   nlohmann::json jconfig;
   {
     std::ifstream ifs(file_path);

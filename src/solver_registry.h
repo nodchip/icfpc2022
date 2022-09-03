@@ -12,9 +12,10 @@
 
 
 struct SolverArguments {
-  SolverArguments(PaintingPtr painting) : painting(painting) {}
+  SolverArguments(PaintingPtr painting, CanvasPtr canvas) : painting(painting), canvas(canvas) {}
 
   PaintingPtr painting;
+  CanvasPtr canvas;
   std::vector<std::shared_ptr<Instruction>> optional_initial_solution;
 
   bool visualize = false;
@@ -82,6 +83,6 @@ struct SolverRegistry {
   static void displaySolvers();
 };
 
-SolverOutputs solve_with(const std::string& solver_name, PaintingPtr problem, const std::vector<std::shared_ptr<Instruction>>& initial_solution);
+SolverOutputs solve_with(const std::string& solver_name, PaintingPtr problem, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& initial_solution);
 
 // vim:ts=2 sw=2 sts=2 et ci
