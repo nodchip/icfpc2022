@@ -1,6 +1,6 @@
 import argparse
 import requests
-
+import urllib.parse
 
 def main():
     parser = argparse.ArgumentParser(description='Brain Wall batch solver')
@@ -25,6 +25,8 @@ def main():
                         help='Last problem number to be started.')
     parser.add_argument('--interval_dp_num_intervals', type=int,
                         help='Interval DP num intervals.')
+    parser.add_argument('--interval_dp_2_num_intervals', type=int,
+                        help='Interval DP2 num intervals.')
 
     args = parser.parse_args()
 
@@ -38,7 +40,13 @@ def main():
     if args.start:
         for problem_number in range(args.first_problem_number, args.last_problem_number + 1):
             # Parameterized Build - Jenkins - Jenkins Wiki https://wiki.jenkins.io/display/JENKINS/Parameterized+Build
-            url = f'{args.url}buildWithParameters?PROBLEM_NUMBER={problem_number}&SOLVER_NAME={args.solver_name}&INTERVAL_DP_NUM_INTERVALS={args.interval_dp_num_intervals}'
+            parameters = {
+                'INTERNAL_DP_NUM_INTERVALS': str(args.interval_dp_num_intervals),
+                'INTERNAL_DP_2_NUM_INTERVALS': str(args.interval_dp_2_num_intervals),
+                'PROBLEM_NUMBER': str(problem_number),
+                'SOLVER_NAME': str(args.solver_name),
+            }
+            url = f'{args.url}buildWithParameters?{urllib.parse.urlencode(parameters)}'
             print(url)
             requests.post(url, auth=(args.user_name, args.token))
 
