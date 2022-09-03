@@ -12,10 +12,12 @@ public:
     int loop = 20;
     int delta = 10;
     bool verbose = false;
+    bool adjust_color = false; // あまり効かない(少なくともIntervalDPSolver3に対して)
     void setOptionParser(CLI::App* app) override {
       app->add_option("--loop", loop);
       app->add_option("--greedy-adjust-position-delta", delta);
-      app->add_flag("--greedy-adjust-verbose", verbose);
+      app->add_flag("--greedy-adjust-position-verbose", verbose);
+      app->add_flag("--greedy-adjust-position-color", adjust_color);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -25,7 +27,8 @@ public:
     const int delta = getOption<Option>()->delta;
     const int loop = getOption<Option>()->loop;
     const bool verbose = getOption<Option>()->verbose;
-    LOG(INFO) << "delta = " << delta << " loop = " << loop;
+    const bool adjust_color = getOption<Option>()->adjust_color;
+    LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color;
     SolverOutputs ret;
     ret.solution = args.optional_initial_solution;
 
@@ -72,6 +75,34 @@ public:
             }
           }
           work[i] = hcut;
+        } else if (auto col = std::dynamic_pointer_cast<ColorInstruction>(best_inst[i])) {
+          if (adjust_color) {
+            // [0, i) までで止めないとブロックが消される
+            auto head = work;
+            head.erase(head.begin() + i, head.end());
+            auto canvas = computeCost(*args.painting, head)->canvas;
+            auto iblock = canvas->blocks.find(col->block_id);
+            if (iblock != canvas->blocks.end()) {
+              auto block = iblock->second;
+              auto color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight);
+              if (color) {
+                auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
+                work[i] = new_col;
+                std::optional<CostBreakdown> cost;
+                try { 
+                  cost = computeCost(*args.painting, work);
+                } catch (const InvalidInstructionException& e) {
+                  // ignore
+                }
+                if (cost && 0 < cost->total && cost->total < best_cost) {
+                  if (verbose) LOG(INFO) << fmt::format("[C] update cost {} -> {}", best_cost, cost->total);
+                  best_cost = cost->total;
+                  best_inst = work;
+                }
+                work[i] = col;
+              }
+            }
+          }
         }
       }
       if (best_cost == best_cost_at_the_beginning_of_loop) {
