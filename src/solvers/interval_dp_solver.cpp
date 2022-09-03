@@ -40,7 +40,7 @@ public:
 
     // グリッドに沿った長方形を color move で平均色に塗ったときのコストを求める
     // move のコストと similarity のコストを両方足しておく
-    // O((HW)^3)
+    // O(height * width * (HW)^2)
     constexpr double kAlpha = 0.005;
     auto colors = CreateVector<Color>(H, H + 1, W, W + 1, Color());
     auto color_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
