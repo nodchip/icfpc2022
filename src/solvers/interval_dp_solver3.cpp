@@ -17,8 +17,10 @@ class IntervalDPSolver3 : public SolverBase {
 public:
   struct Option : public OptionBase {
     int num_intervals = 10;
+    double prune_threshold = 8.0;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--interval-dp-3-num-intervals", num_intervals);
+      app->add_option("--interval-dp-3-prune-threshold", prune_threshold);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -26,7 +28,9 @@ public:
   IntervalDPSolver3() { }
   SolverOutputs solve(const SolverArguments &args) override {
     const int num_intervals = getOption<Option>()->num_intervals;
+    const double prune_threshold = getOption<Option>()->prune_threshold;
     LOG(INFO) << "num_intervals = " << num_intervals;
+    LOG(INFO) << "prune_threshold = " << prune_threshold;
     const int height = args.painting->height;
     const int width = args.painting->width;
     const auto get_value = [&, frame=args.painting->frame](int y, int x, int c) {
@@ -60,6 +64,8 @@ public:
       for (int t = b + 1; t <= H; ++t) {
         for (int l = 0; l < W; ++l) {
           for (int r = l + 1; r <= W; ++r) {
+            const double multiplier = 1.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l]));
+            if (multiplier < prune_threshold) continue;  // 面積が大きい領域は、 geometricMedianColor() が重い && 単色でまとめて塗る可能性が低いので枝刈りする
             colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), 10).value();
             double cost = 0.0;
             for (int y = yticks[b]; y < yticks[t]; ++y) {
@@ -74,7 +80,7 @@ public:
             }
             similarity_costs[b][t][l][r] = kAlpha * cost;
             color_costs[b][t][l][r] = kAlpha * cost;
-            color_costs[b][t][l][r] += std::round(5.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+            color_costs[b][t][l][r] += std::round(5.0 * multiplier);
           }
         }
       }
