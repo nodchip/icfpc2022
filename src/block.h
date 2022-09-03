@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "color.h"
 #include "point.h"
 
