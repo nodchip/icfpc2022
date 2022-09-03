@@ -127,9 +127,11 @@ public:
 
     // 操作列を構築する
     SolverOutputs ret;
-    const auto comment = std::make_shared<CommentInstruction>("");
-    comment->comment = fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W])));
-    ret.solution.push_back(comment);
+    const auto add_comment = [&](const std::string& comment) {
+      ret.solution.push_back(std::make_shared<CommentInstruction>(comment));
+    };
+    add_comment(fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W]))));
+    add_comment(fmt::format("num_intervals = {0}", num_intervals));
     std::vector<std::tuple<int, int, int, int, std::string>> stack;
     stack.emplace_back(0, H, 0, W, "0");
     while (!stack.empty()) {
