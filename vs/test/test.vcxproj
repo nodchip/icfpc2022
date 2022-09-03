@@ -94,11 +94,20 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\block.cpp" />
+    <ClCompile Include="..\..\src\canvas.cpp" />
     <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\instruction.cpp" />
     <ClCompile Include="..\..\src\instruction_cost_calculator.cpp" />
+    <ClCompile Include="..\..\src\interpreter.cpp" />
+    <ClCompile Include="..\..\src\painter.cpp" />
+    <ClCompile Include="..\..\src\parser.cpp" />
+    <ClCompile Include="..\..\src\point.cpp" />
+    <ClCompile Include="..\..\src\program.cpp" />
+    <ClCompile Include="..\..\src\similarity_checker.cpp" />
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
     <ClCompile Include="..\..\src\tests\test_instruction.cpp" />
+    <ClCompile Include="..\..\src\tests\test_painter.cpp" />
     <ClCompile Include="..\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -108,9 +117,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\block.h" />
+    <ClInclude Include="..\..\src\canvas.h" />
     <ClInclude Include="..\..\src\color.h" />
     <ClInclude Include="..\..\src\instruction.h" />
     <ClInclude Include="..\..\src\instruction_cost_calculator.h" />
+    <ClInclude Include="..\..\src\interpreter.h" />
+    <ClInclude Include="..\..\src\painter.h" />
+    <ClInclude Include="..\..\src\parser.h" />
+    <ClInclude Include="..\..\src\point.h" />
+    <ClInclude Include="..\..\src\program.h" />
+    <ClInclude Include="..\..\src\similarity_checker.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

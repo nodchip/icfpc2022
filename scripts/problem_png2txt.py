@@ -9,7 +9,7 @@ def to_txt(path, arr):
 		fo.write(f'{arr.shape[1]} {arr.shape[0]}\n')
 		for y in range(arr.shape[0]):
 			for x in range(arr.shape[1]):
-				fo.write(f'{arr[y, x, 0]} {arr[y, x, 1]} {arr[y, x, 2]} {arr[y, x, 3]}   ')
+				fo.write(f'{arr[y, x, 2]} {arr[y, x, 1]} {arr[y, x, 0]} {arr[y, x, 3]}   ')
 			fo.write('\n')
 				
 def main():
