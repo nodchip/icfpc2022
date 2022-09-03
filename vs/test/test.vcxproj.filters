@@ -65,8 +65,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\interpreter.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClInclude>
-    <ClCompile Include="test_string_util.cpp">
+    </ClCompile>
+    <ClCompile Include="..\..\src\tests\test_string_util.cpp">
       <Filter>ソース ファイル\tests</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\string_util.cpp">
