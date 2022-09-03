@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "instruction.h"
-#include "program.h"
 
 struct ParseError {
   int line_number;
@@ -14,11 +13,10 @@ struct ParseError {
   ParseError(int line_number, std::string message) : line_number(line_number), message(message) {}
 };
 
-using ParseResult = std::variant<std::shared_ptr<Program>, std::shared_ptr<Instruction>, std::shared_ptr<ParseError>>;
+using ParseResult = std::variant<std::shared_ptr<Instruction>, std::shared_ptr<ParseError>>;
 
 struct Parser
 {
-  ParseResult Parse(const std::string& code);
   ParseResult ParseLine(int line_number, std::string line);
-  std::shared_ptr<Program> ParseFile(const std::string& file_path, ProgramMetaData meta);
+  std::vector<std::shared_ptr<Instruction>> ParseFile(const std::string& isl_file_path);
 };

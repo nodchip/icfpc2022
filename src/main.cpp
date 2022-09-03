@@ -99,12 +99,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << fmt::format("initial solution not found {}", initial_solution_isl);
         assert(false);
       }
-      auto program = Parser().ParseFile(initial_solution_isl, ProgramMetaData { problem.width, problem.height, RGBA(0, 0, 0, 0) });
-      if (!program) {
-        LOG(ERROR) << fmt::format("failed to parse initial solution {}", initial_solution_isl);
-        assert(false);
-      }
-      initial_solution = program->instructions;
+      initial_solution = Parser().ParseFile(initial_solution_isl);
       LOG(INFO) << fmt::format("Initial Solution  : {} ({} instructions)", initial_solution_isl, initial_solution.size());
     }
     return initial_solution;

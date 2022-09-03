@@ -111,7 +111,6 @@
     <ClCompile Include="..\..\src\painter.cpp" />
     <ClCompile Include="..\..\src\parser.cpp" />
     <ClCompile Include="..\..\src\point.cpp" />
-    <ClCompile Include="..\..\src\program.cpp" />
     <ClCompile Include="..\..\src\random_instruction_generator.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
@@ -142,7 +141,6 @@
     <ClInclude Include="..\..\src\painter.h" />
     <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\point.h" />
-    <ClInclude Include="..\..\src\program.h" />
     <ClInclude Include="..\..\src\random_instruction_generator.h" />
     <ClInclude Include="..\..\src\similarity_checker.h" />
     <ClInclude Include="..\..\src\solver_registry.h" />
