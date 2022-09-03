@@ -19,4 +19,20 @@ struct RGBA
   bool operator!=(const RGBA& rhs) const noexcept {
     return !(*this == rhs);
   }
+  int operator[](std::size_t channel) const noexcept {
+    switch (channel) {
+      case 0: return r;
+      case 1: return g;
+      case 2: return b;
+      default: return a;
+    }
+  }
+  int& operator[](std::size_t channel) noexcept {
+    switch (channel) {
+      case 0: return r;
+      case 1: return g;
+      case 2: return b;
+      default: return a;
+    }
+  }
 };
