@@ -30,6 +30,7 @@ public:
     const bool adjust_color = getOption<Option>()->adjust_color;
     LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color;
     SolverOutputs ret;
+    auto initial_canvas = args.canvas;
     ret.solution = args.optional_initial_solution;
 
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ
@@ -47,7 +48,7 @@ public:
             work[i] = new_vcut;
             std::optional<CostBreakdown> cost;
             try { 
-              cost = computeCost(*args.painting, work);
+              cost = computeCost(*args.painting, initial_canvas, work);
             } catch (const InvalidInstructionException& e) {
               continue;
             }
@@ -64,7 +65,7 @@ public:
             work[i] = new_hcut;
             std::optional<CostBreakdown> cost;
             try { 
-              cost = computeCost(*args.painting, work);
+              cost = computeCost(*args.painting, initial_canvas, work);
             } catch (const InvalidInstructionException& e) {
               continue;
             }
@@ -80,7 +81,7 @@ public:
             // [0, i) までで止めないとブロックが消される
             auto head = work;
             head.erase(head.begin() + i, head.end());
-            auto canvas = computeCost(*args.painting, head)->canvas;
+            auto canvas = computeCost(*args.painting, initial_canvas, head)->canvas;
             auto iblock = canvas->blocks.find(col->block_id);
             if (iblock != canvas->blocks.end()) {
               auto block = iblock->second;
@@ -90,7 +91,7 @@ public:
                 work[i] = new_col;
                 std::optional<CostBreakdown> cost;
                 try { 
-                  cost = computeCost(*args.painting, work);
+                  cost = computeCost(*args.painting, initial_canvas, work);
                 } catch (const InvalidInstructionException& e) {
                   // ignore
                 }

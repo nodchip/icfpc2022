@@ -8,6 +8,8 @@
 
 using Color = RGBA;
 
+struct Canvas;
+using CanvasPtr = std::shared_ptr<Canvas>;
 struct Canvas
 {
 
@@ -22,8 +24,9 @@ struct Canvas
 
   std::vector<std::shared_ptr<SimpleBlock>> simplify() const;
 
+  CanvasPtr Clone() const;
+
 };
-typedef std::shared_ptr<Canvas> CanvasPtr;
 
 CanvasPtr loadCanvasFromJSONFile(const std::string& file_path);
 CanvasPtr createLightningCanvas(int width, int height);

@@ -18,9 +18,10 @@ struct Block {
   Point topRight;
   Size size;
 
-  virtual std::vector<std::shared_ptr<SimpleBlock>> getChildren() const = 0;
-
   Block(BlockType typ, const std::string& id, const Point& bottomLeft, const Point& topRight);
+
+  virtual std::vector<std::shared_ptr<SimpleBlock>> getChildren() const = 0;
+  virtual std::shared_ptr<Block> Clone() const = 0;
 
 };
 
@@ -32,6 +33,8 @@ struct SimpleBlock : Block
   SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color);
 
   std::vector<std::shared_ptr<SimpleBlock>> getChildren() const override;
+
+  std::shared_ptr<Block> Clone() const override;
 
 };
 
@@ -48,6 +51,8 @@ struct ComplexBlock : Block
   std::vector<std::shared_ptr<SimpleBlock>> getChildren() const override;
 
   std::vector<std::shared_ptr<SimpleBlock>> offsetChildren(const Point& newBottomLeft) const;
+
+  std::shared_ptr<Block> Clone() const override;
 
 };
 

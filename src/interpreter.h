@@ -50,5 +50,6 @@ struct CostBreakdown {
   int total;
   std::shared_ptr<Canvas> canvas;
 };
-std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vector<std::shared_ptr<Instruction>>& instructions);
+
+std::optional<CostBreakdown> computeCost(const Painting& problem, const CanvasPtr& initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions);
 

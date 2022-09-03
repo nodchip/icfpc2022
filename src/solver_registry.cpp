@@ -6,7 +6,7 @@
 #include "interpreter.h"
 
 std::optional<CostBreakdown> executeInputSolution(const SolverArguments& args) {
-  return computeCost(*args.painting, args.optional_initial_solution);
+  return computeCost(*args.painting, args.canvas, args.optional_initial_solution);
 }
 
 SolverBase::Ptr SolverRegistry::getSolver(std::string name) {

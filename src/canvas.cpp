@@ -22,6 +22,14 @@ std::vector<std::shared_ptr<SimpleBlock>> Canvas::simplify() const {
   return simplifiedBlocks;
 }
 
+CanvasPtr Canvas::Clone() const {
+  auto newCanvas = std::make_shared<Canvas>(width, height, backgroundColor);
+  for (const auto& [id, block] : blocks) {
+    newCanvas->blocks[id] = block->Clone();
+  }
+  return newCanvas;
+}
+
 CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
   nlohmann::json jconfig;
   {

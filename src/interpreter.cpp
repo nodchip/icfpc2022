@@ -611,9 +611,9 @@ std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_pt
   return nullptr;
 }
 
-std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+std::optional<CostBreakdown> computeCost(const Painting& problem, const CanvasPtr& initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
 
-  auto canvas = std::make_shared<Canvas>(problem.width, problem.height, RGBA(0, 0, 0, 0)); // TODO: 初期状態の考慮
+  auto canvas = initial_canvas->Clone();
 
   Interpreter interpreter;
   std::shared_ptr<InterpreterResult> interpreter_result = interpreter.Run(canvas, instructions);
@@ -624,5 +624,5 @@ std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vec
   const int instructions_cost = interpreter_result->cost;
   const int similarity_cost = SimilarityChecker::imageDiff(problem.frame, Painter::draw(*interpreter_result->canvas, false));
   const int total_cost = instructions_cost + similarity_cost;
-  return CostBreakdown {instructions_cost, similarity_cost, total_cost, interpreter_result->canvas};
+  return CostBreakdown{ instructions_cost, similarity_cost, total_cost, interpreter_result->canvas };
 }
