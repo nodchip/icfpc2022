@@ -15,8 +15,18 @@ auto CreateVector(std::size_t count, Args&&... args) {
 
 class IntervalDPSolver : public SolverBase {
 public:
+  struct Option : public OptionBase {
+    int num_intervals = 10;
+    void setOptionParser(CLI::App* app) override {
+      app->add_option("--interval-dp-num-intervals", num_intervals);
+    }
+  };
+  virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
+
   IntervalDPSolver() { }
   SolverOutputs solve(const SolverArguments &args) override {
+    const int num_intervals = getOption<Option>()->num_intervals;
+    LOG(INFO) << "num_intervals = " << num_intervals;
     const int height = args.painting->height;
     const int width = args.painting->width;
     const auto get_value = [&, frame=args.painting->frame](int y, int x, int c) {
@@ -24,14 +34,14 @@ public:
     };
 
     // グリッドに分割する
-    // とりあえず縦横とも 10 等分。境界を探して設定すればより良くなるはず
+    // とりあえず縦横とも等分する。境界を探して設定すればより良くなるはず
     std::vector<int> yticks;
-    for (int y = 0; y < height; y += height / 10) {
+    for (int y = 0; y < height; y += height / num_intervals) {
       yticks.push_back(y);
     }
     yticks.push_back(height);
     std::vector<int> xticks;
-    for (int x = 0; x < width; x += width / 10) {
+    for (int x = 0; x < width; x += width / num_intervals) {
       xticks.push_back(x);
     }
     xticks.push_back(width);
@@ -136,5 +146,5 @@ public:
   }
 };
 
-REGISTER_SOLVER("IntervalDPSolver", IntervalDPSolver);
+REGISTER_SOLVER_WITH_OPTION("IntervalDPSolver", IntervalDPSolver, IntervalDPSolver::Option);
 // vim:ts=2 sw=2 sts=2 et ci
