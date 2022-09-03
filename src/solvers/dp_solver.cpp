@@ -105,6 +105,10 @@ class DpSolver : public SolverBase {
     }
     SolverOutputs ret;
     auto&& best = SolveDp(0, 0, height, width);
+    const auto comment_instruction = std::make_shared<CommentInstruction>();
+    comment_instruction->comment = fmt::format("cost = {0}", best.cost);
+    LOG(INFO) << comment_instruction->comment;
+    ret.solution.push_back(comment_instruction);
     best.UpdateOutput("0", ret);
     return ret;
   }
@@ -131,7 +135,8 @@ class DpSolver : public SolverBase {
         state.instruction = std::make_shared<ColorInstruction>(
             "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
                     ->color);
-        state.cost = state0.similarity + state1.similarity +
+        state.similarity = state0.similarity + state1.similarity;
+        state.cost = state.similarity +
                      state.instruction->getBaseCost() * base_ratio;
         return state;
       }
@@ -155,7 +160,8 @@ class DpSolver : public SolverBase {
         state.instruction = std::make_shared<ColorInstruction>(
             "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
                     ->color);
-        state.cost = state0.similarity + state1.similarity +
+        state.similarity = state0.similarity + state1.similarity;
+        state.cost = state.similarity +
                      state.instruction->getBaseCost() * base_ratio;
         return state;
       }
