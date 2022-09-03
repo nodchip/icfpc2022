@@ -11,7 +11,7 @@ struct Point
 
   Point getDiff(const Point& other) const;
 
-  bool isStrictryInside(const Point& bottomLeft, const Point& topRight) const;
+  bool isStrictlyInside(const Point& bottomLeft, const Point& topRight) const;
 
   bool isOnBoundary(const Point& bottomLeft, const Point& topRight) const;
 

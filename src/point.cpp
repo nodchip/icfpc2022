@@ -7,7 +7,7 @@ Point Point::getDiff(const Point& other) const {
     return { std::max(0, px - other.px), std::max(0, py - other.py) };
 }
 
-bool Point::isStrictryInside(const Point& bottomLeft, const Point& topRight) const {
+bool Point::isStrictlyInside(const Point& bottomLeft, const Point& topRight) const {
   return bottomLeft.px < px&& px < topRight.px&& bottomLeft.py < py&& py < topRight.py;
 }
 
@@ -19,7 +19,7 @@ bool Point::isOnBoundary(const Point& bottomLeft, const Point& topRight) const {
 }
 
 bool Point::isInside(const Point& bottomLeft, const Point& topRight) const {
-  return isStrictryInside(bottomLeft, topRight) || isOnBoundary(bottomLeft, topRight);
+  return isStrictlyInside(bottomLeft, topRight) || isOnBoundary(bottomLeft, topRight);
 }
 
 int Point::getScalarSize() const { return px * py; }

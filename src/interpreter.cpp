@@ -81,7 +81,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
   const auto& [blockId, point] = *point_cut_instruction;
   assert(context->blocks.count(blockId));
   const auto& block = context->blocks[blockId];
-  assert_throw_invalid_instruction(point.isStrictryInside(block->bottomLeft, block->topRight));
+  assert_throw_invalid_instruction(point.isStrictlyInside(block->bottomLeft, block->topRight));
   // TypeCheck Ends
 
   // Scoring Starts
@@ -167,7 +167,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
         continue;
       }
       // Case 5
-      if (point.isStrictryInside(subBlock->bottomLeft, subBlock->topRight)) {
+      if (point.isStrictlyInside(subBlock->bottomLeft, subBlock->topRight)) {
         bottomLeftBlocks.push_back(std::make_shared<SimpleBlock>(
           "bl_child",
           subBlock->bottomLeft,

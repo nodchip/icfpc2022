@@ -60,7 +60,7 @@ struct DividedPainting {
     SimpleBlock block;
     DividedPainting(PaintingPtr painting_, const SimpleBlock& block_) : painting(painting_), block(block_) {}
     double PointCut(const Point& point, std::vector<std::shared_ptr<Instruction>>& solution, std::vector<DividedPainting>& children) {
-        assert(point.isStrictryInside(block.bottomLeft, block.topRight));
+        assert(point.isStrictlyInside(block.bottomLeft, block.topRight));
         auto instruction = std::make_shared<PointCutInstruction>(block.id, point);
         solution.push_back(instruction);
         children.push_back(DividedPainting(painting, SimpleBlock(block.id + ".0", block.bottomLeft, point, block.color)));
@@ -90,7 +90,7 @@ struct DividedPainting {
         return getCost((*instruction), block.size.getScalarSize(), painting->width * painting->height);
     }
     double Cut(const Point& point, std::vector<std::shared_ptr<Instruction>>& solution, std::vector<DividedPainting>& children) {
-        if (point.isStrictryInside(block.bottomLeft, block.topRight)) return PointCut(point, solution, children);
+        if (point.isStrictlyInside(block.bottomLeft, block.topRight)) return PointCut(point, solution, children);
         if (point.px == block.bottomLeft.px || point.px == block.topRight.px) return LineCutY(point.py, solution, children);
         return LineCutX(point.px, solution, children);
         
