@@ -128,7 +128,7 @@ struct DividedPainting {
         }
         return ret;
     }
-    Point Midpoint() { return Point((block.bottomLeft.px + block.topRight.px) / 2, (block.bottomLeft.py + block.topRight.py) / 2); }
+    Point MidPoint() { return Point((block.bottomLeft.px + block.topRight.px) / 2, (block.bottomLeft.py + block.topRight.py) / 2); }
     Point EdgePoint(std::mt19937_64& rand, int itr_max = 5) {
         Point ret(block.bottomLeft.px + 1, block.bottomLeft.py + 1);
         if (block.topRight.px - block.bottomLeft.px > 2) {
@@ -179,8 +179,10 @@ class QuadTree : public SolverBase {
 public:
     struct Option : public OptionBase {
       int min_cell_size = -1;
+      int mid_point_itr = -1;
       void setOptionParser(CLI::App* app) override {
         app->add_option("--quad-tree-min-cell-size", min_cell_size);
+        app->add_option("--mid-point-iter", mid_point_itr);
       }
     };
     virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -209,7 +211,8 @@ public:
               continue;
 
             if (color_var.size() > 1) {
-                auto next_point = paint.EdgePoint(rand);
+                auto itr = getOption<Option>()->mid_point_itr;
+                auto next_point = itr > 0 ? paint.EdgePoint(rand,itr) : paint.MidPoint();
                 assert(paint.block.bottomLeft.px != next_point.px || paint.block.bottomLeft.py != next_point.py);
                 std::vector<DividedPainting> children;
                 cost += paint.Cut(next_point, ret.solution, children);
