@@ -19,8 +19,8 @@ public:
   SolverOutputs solve(const SolverArguments &args) override {
     const int height = args.painting->height;
     const int width = args.painting->width;
-    const auto get_value = [&](int y, int x, int c) {
-      return (*args.painting)(x, y)[c];
+    const auto get_value = [&, frame=args.painting->frame](int y, int x, int c) {
+      return frame[x + y * width][c];
     };
 
     // グリッドに分割する
