@@ -120,6 +120,7 @@
     <ClCompile Include="..\..\src\solvers\interval_dp_solver2.cpp" />
     <ClCompile Include="..\..\src\solvers\interval_dp_solver3.cpp" />
     <ClCompile Include="..\..\src\solvers\mean_color.cpp" />
+    <ClCompile Include="..\..\src\solvers\merge_all.cpp" />
     <ClCompile Include="..\..\src\solver_registry.cpp" />
     <ClCompile Include="..\..\src\string_util.cpp" />
     <ClCompile Include="..\..\src\xorshift.cpp" />
