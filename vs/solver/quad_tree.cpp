@@ -6,6 +6,55 @@
 #include <fmt/format.h>
 #include "instruction.h"
 #include "instruction_cost_calculator.h"
+
+
+using ColorMap = std::map<Color, int>;
+ColorMap operator+(const ColorMap& a, const ColorMap& b) {
+    ColorMap ret(a);
+    for (const auto& e : b) {
+        if (ret.count(e.first)) ret[e.first] += e.second;
+        else ret[e.first] = e.second;
+    }
+    return ret;
+}
+ColorMap operator+(const ColorMap& a, const Color& col) {
+    ColorMap ret(a);
+    if (ret.count(col)) ret[col] += 1;
+    else ret[col] = 1;
+    return ret;
+}
+ColorMap operator-(const ColorMap& a, const ColorMap& b) {
+    ColorMap ret(a);
+    for (const auto& e : b) {
+        assert(ret.count(e.first));
+        if (ret[e.first] != e.second) ret[e.first] -= e.second;
+        else ret.erase(e.first);
+    }
+    return ret;
+}
+
+
+struct CumulativeColorMap {
+    PaintingPtr painting;
+    std::vector<std::vector<ColorMap>> cumulative;
+    CumulativeColorMap(PaintingPtr painting_) : painting(painting_) {
+        cumulative.resize(painting->height + 1, std::vector<ColorMap>(painting->width + 1));
+        for (int y = 0; y < painting->height; ++y) {
+            LOG(INFO) << fmt::format("y is : {}", y);
+            for (int x = 0; x < painting->width; ++x) {
+                cumulative[y + 1][x + 1] = cumulative[y][x+1] + (cumulative[y+1][x] - cumulative[y][x]) + painting->operator()(x, y);
+            }
+        }
+    }
+    ColorMap Get(const Point& bottomLeft, const Point& topRight) {
+        return cumulative[topRight.py][topRight.px] + cumulative[bottomLeft.py][bottomLeft.py] - cumulative[topRight.py][bottomLeft.px] - cumulative[bottomLeft.py][topRight.px];
+    }
+};
+using CumulativeColorMapPtr = std::shared_ptr<CumulativeColorMap>;
+
+CumulativeColorMapPtr color_map;
+
+
 struct DividedPainting {
     PaintingPtr painting;
     SimpleBlock block;
@@ -53,8 +102,13 @@ struct DividedPainting {
         block.color = col;
         return getCost((*instruction), block.size.getScalarSize(), painting->width * painting->height);
     }
-    std::map<Color, int> CountColorVariation() {
-        std::map<Color, int> ret;
+
+    ColorMap CountColorVariation() {
+#if 0
+        if(!color_map) color_map = std::make_shared<CumulativeColorMap>(CumulativeColorMap(painting));
+        return color_map->Get(block.bottomLeft, block.topRight);
+#else
+        ColorMap ret;
         for (int y = block.bottomLeft.py; y < block.topRight.py; ++y)for (int x = block.bottomLeft.px; x < block.topRight.px; ++x) {
             auto col = painting->operator()(x, y);
             if (ret.count(col)) ret[col] += 1;
@@ -62,8 +116,10 @@ struct DividedPainting {
 
         }
         return ret;
+#endif
     }
-    Color MostCommonColor(const std::map<Color, int> color_var) {
+
+    Color MostCommonColor(const ColorMap& color_var) {
         int max_count = -1;
         Color ret = block.color;
         for (auto e : color_var) if (e.second > max_count) {
@@ -73,6 +129,49 @@ struct DividedPainting {
         return ret;
     }
     Point Midpoint() { return Point((block.bottomLeft.px + block.topRight.px) / 2, (block.bottomLeft.py + block.topRight.py) / 2); }
+    Point EdgePoint(std::mt19937_64& rand, int itr_max = 5) {
+        Point ret(block.bottomLeft.px + 1, block.bottomLeft.py + 1);
+        if (block.topRight.px - block.bottomLeft.px > 2) {
+            std::uniform_int_distribution<> randX(block.bottomLeft.px + 1, block.topRight.px - 2);
+            int max_count = -1;
+            int max_px = -1;
+            for (int itr = 0; itr < itr_max; ++itr) {
+                auto px = randX(rand);
+                assert(0 <= px);
+                assert(px < painting->width - 1);
+                int count = 0;
+                for (int py = block.bottomLeft.py; py < block.topRight.py; ++py) {
+                    if (painting->operator()(px, py) != painting->operator()(px + 1, py)) count++;
+                }
+                if (count > max_count) {
+                    max_px = px;
+                    max_count = count;
+                }
+            }
+            ret.px = max_px;
+        }
+        if (block.topRight.py - block.bottomLeft.py > 2) {
+            std::uniform_int_distribution<> randY(block.bottomLeft.py + 1, block.topRight.py - 2);
+            int max_count = -1;
+            int max_py = -1;
+            for (int itr = 0; itr < itr_max; ++itr) {
+                auto py = randY(rand);
+                assert(0 <= py);
+                assert(py < painting->height - 1);
+                int count = 0;
+                for (int px = block.bottomLeft.px; px < block.topRight.px; ++px) {
+                    if (painting->operator()(px, py) != painting->operator()(px, py+1)) count++;
+                }
+                if (count > max_count) {
+                    max_py = py;
+                    max_count = count;
+                }
+            }
+            ret.py = max_py;
+        }
+        return ret;
+
+    }
 };
 
 
@@ -97,6 +196,8 @@ public:
         std::queue<DividedPainting> Q;
         Q.push(initial_paint);
         double cost = 0;
+        std::mt19937_64 rand(0);
+
         while (!Q.empty()) {
             auto paint = Q.front();
             Q.pop();
@@ -108,7 +209,7 @@ public:
               continue;
 
             if (color_var.size() > 1) {
-                auto next_point = paint.Midpoint();
+                auto next_point = paint.EdgePoint(rand);
                 assert(paint.block.bottomLeft.px != next_point.px || paint.block.bottomLeft.py != next_point.py);
                 std::vector<DividedPainting> children;
                 cost += paint.Cut(next_point, ret.solution, children);
