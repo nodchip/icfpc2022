@@ -10,7 +10,9 @@ using Frame = std::vector<RGBA>;
 
 struct Painter {
 
-  static Frame draw(const Canvas& canvas);
+  // canvasOriginAtBottomLeftOfFrame: trueのとき、tsコードと同様にcanvasの(x=0, y=0)はframeの左下に、canvasの(x=0, y=H-1)はframe[0]になる。
+  // canvasOriginAtBottomLeftOfFrame: false、canvasの(x=0, y=0)はframe[0]になる。
+  static Frame draw(const Canvas& canvas, bool canvasOriginAtBottomLeftOfFrame = true);
 
 };
 

@@ -3,13 +3,13 @@
 #include <array>
 #include <cassert>
 
-Frame Painter::draw(const Canvas& canvas) {
+Frame Painter::draw(const Canvas& canvas, bool canvasOriginAtBottomLeftOfFrame) {
   const auto& blocks = canvas.simplify();
   Frame frame(canvas.width * canvas.height);
   int size = 0;
   for (const auto& block : blocks) {
-    const Point frameTopLeft(block->bottomLeft.px, canvas.height - block->topRight.py);
-    const Point frameBottomRight(block->topRight.px, canvas.height - block->bottomLeft.py);
+    const Point frameTopLeft(block->bottomLeft.px  , canvasOriginAtBottomLeftOfFrame ? canvas.height - block->topRight.py   : block->bottomLeft.py);
+    const Point frameBottomRight(block->topRight.px, canvasOriginAtBottomLeftOfFrame ? canvas.height - block->bottomLeft.py : block->topRight.py  );
     size += (frameBottomRight.px - frameTopLeft.px) * (frameBottomRight.py - frameTopLeft.py);
     for (int y = frameTopLeft.py; y < frameBottomRight.py; y++) {
       for (int x = frameTopLeft.px; x < frameBottomRight.px; x++) {

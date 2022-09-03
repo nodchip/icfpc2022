@@ -624,7 +624,7 @@ std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vec
     return std::nullopt;
   }
   const int instructions_cost = interpreter_result->cost;
-  const int similarity_cost = SimilarityChecker::imageDiff(problem.frame, Painter::draw(*interpreter_result->canvas));
+  const int similarity_cost = SimilarityChecker::imageDiff(problem.frame, Painter::draw(*interpreter_result->canvas, false));
   const int total_cost = instructions_cost + similarity_cost;
   return CostBreakdown {instructions_cost, similarity_cost, total_cost, interpreter_result->canvas};
 }
