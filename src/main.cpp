@@ -10,6 +10,18 @@
 #include "painter.h"
 #include "solver_registry.h"
 
+std::vector<std::string> split(std::string s, char delim) {
+  std::vector<std::string> result;
+  std::istringstream iss(s);
+  std::string token;
+  while (std::getline(iss, token, delim)) {
+    if (!token.empty()) {
+      result.push_back(token);
+    }
+  }
+  return result;
+}
+
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -23,13 +35,13 @@ int main(int argc, char* argv[]) {
   app.require_subcommand(0, 1);
 
   auto sub_solve = app.add_subcommand("solve");
-  std::string solver_name;
+  std::string solver_names;
   std::string problem_file;
   std::string initial_solution_isl;
   std::string output_solution_isl = "output.isl";
   double timeout_s = -1.0;
   bool visualize = false;
-  sub_solve->add_option("solver_name", solver_name, "solver name");
+  sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
   sub_solve->add_option("initial_solution_isl", initial_solution_isl, "input solution ISL file path (optional)");
@@ -39,13 +51,14 @@ int main(int argc, char* argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   if (sub_solve->parsed()) {
-    solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
-    LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
-
-    auto solver = SolverRegistry::getSolver(solver_name);
-    if (!solver) {
-      LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
-      return 0;
+    std::vector<std::string> solver_name_list;
+    for (auto solver_name : split(solver_names, ',')) {
+      solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
+      solver_name_list.push_back(solver_name);
+    }
+    if (solver_name_list.empty()) {
+      LOG(ERROR) << fmt::format("no solvers");
+      return -1;
     }
 
     std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
@@ -67,11 +80,24 @@ int main(int argc, char* argv[]) {
       arg.timeout_s = timeout_s;
     }
 
-    const auto t0 = std::chrono::system_clock::now();
-    SolverOutputs out = solver->solve(arg);
-    const auto t1 = std::chrono::system_clock::now();
-    const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
-    LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
+    SolverOutputs out;
+    for (auto solver_name : solver_name_list) {
+      auto solver = SolverRegistry::getSolver(solver_name);
+      if (!solver) {
+        LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
+        return -1;
+      }
+      LOG(ERROR) << fmt::format("Solver   : {} (starting with {} instructions)", solver_name, arg.optional_initial_solution.size());
+
+      const auto t0 = std::chrono::system_clock::now();
+      out = solver->solve(arg);
+      const auto t1 = std::chrono::system_clock::now();
+      const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
+      LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
+
+      // successive processing.
+      arg.optional_initial_solution = out.solution;
+    }
 
     // TODO: evaluate the solution.
 
