@@ -20,4 +20,5 @@ struct Parser
 {
   ParseResult Parse(const std::string& code);
   ParseResult ParseLine(int line_number, std::string line);
+  std::shared_ptr<Program> ParseFile(const std::string& file_path, ProgramMetaData meta);
 };

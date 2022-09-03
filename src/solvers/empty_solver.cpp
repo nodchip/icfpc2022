@@ -22,7 +22,17 @@ public:
     return ret;
   }
 };
-
 REGISTER_SOLVER("EmptySolver", EmptySolver);
+
+class NullSolver : public SolverBase {
+public:
+  NullSolver() { }
+  SolverOutputs solve(const SolverArguments &args) override {
+    SolverOutputs ret;
+    ret.solution = args.optional_initial_solution;
+    return ret;
+  }
+};
+REGISTER_SOLVER("NullSolver", NullSolver);
 // vim:ts=2 sw=2 sts=2 et ci
 

@@ -87,3 +87,24 @@ ParseResult Parser::ParseLine(int line_number, std::string line)
   auto message = fmt::format("Cannot parse the instruction[{}]!", line);
   return std::make_shared<ParseError>(line_number, message);
 }
+
+std::shared_ptr<Program> Parser::ParseFile(const std::string& file_path, ProgramMetaData meta) {
+  std::shared_ptr<Program> result = std::make_shared<Program>(meta, std::vector<std::shared_ptr<Instruction>> {});
+
+  std::ifstream ifs(file_path);
+  std::string line;
+  int line_number = 0;
+  while (std::getline(ifs, line)) {
+    ParseResult r = ParseLine(line_number, line);
+
+    if (std::holds_alternative<std::shared_ptr<ParseError>>(r)) {
+      LOG(ERROR) << std::get<std::shared_ptr<ParseError>>(r)->message;
+      return {};
+    }
+    if (std::holds_alternative<std::shared_ptr<Instruction>>(r)) {
+      auto inst = std::get<std::shared_ptr<Instruction>>(r);
+      result->instructions.push_back(inst);
+    }
+  }
+  return result;
+}

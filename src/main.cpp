@@ -7,6 +7,7 @@
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
 
+#include "parser.h"
 #include "painter.h"
 #include "instruction_cost_calculator.h"
 #include "similarity_checker.h"
@@ -44,12 +45,14 @@ int main(int argc, char* argv[]) {
   std::string output_solution_isl = "output.isl";
   double timeout_s = -1.0;
   bool visualize = false;
+  bool output_meta = true;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
   sub_solve->add_option("initial_solution_isl", initial_solution_isl, "input solution ISL file path (optional)");
   sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
+  sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
 
   SolverRegistry::setOptionParser(sub_solve);
 
@@ -69,13 +72,23 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
     if (!problem) {
       LOG(ERROR) << fmt::format("failed to load problem {}", problem_file);
+      return -1;
     }
     LOG(INFO) << fmt::format("Problem  : {} ({}x{})", problem_file, problem->width, problem->height);
 
     std::vector<std::shared_ptr<Instruction>> initial_solution;
-    if (std::filesystem::exists(initial_solution_isl)) {
-      // TODO: load ISL
-      LOG(INFO) << fmt::format("Initial Solution  : {}", initial_solution_isl);
+    if (!initial_solution_isl.empty()) {
+      if (!std::filesystem::exists(initial_solution_isl)) {
+        LOG(ERROR) << fmt::format("initial solution not found {}", initial_solution_isl);
+        return -1;
+      }
+      auto program = Parser().ParseFile(initial_solution_isl, ProgramMetaData { problem->width, problem->height, RGBA(0, 0, 0, 0) });
+      if (!program) {
+        LOG(ERROR) << fmt::format("failed to parse initial solution {}", initial_solution_isl);
+        return -1;
+      }
+      initial_solution = program->instructions;
+      LOG(INFO) << fmt::format("Initial Solution  : {} ({} instructions)", initial_solution_isl, initial_solution.size());
     }
 
     SolverArguments arg(problem);
