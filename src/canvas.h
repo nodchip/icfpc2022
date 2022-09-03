@@ -23,3 +23,5 @@ struct Canvas
   std::vector<std::shared_ptr<SimpleBlock>> simplify() const;
 
 };
+
+std::shared_ptr<Canvas> loadCanvasFromJSONFile(const std::string& file_path);
