@@ -109,6 +109,17 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<Painting> problem = loadProblem();
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
+    if (!initial_solution.empty()) {
+      auto cost = computeCost(*problem, initial_solution);
+      if (!cost) {
+        LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
+        return -1;
+      }
+      LOG(INFO) << fmt::format("-----------[ {} ]-----------", initial_solution_isl);
+      LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
+      LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
+      LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+    }
 
     SolverArguments arg(problem);
     arg.optional_initial_solution = initial_solution;
