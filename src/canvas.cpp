@@ -50,3 +50,9 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
 
   return result;
 }
+
+CanvasPtr createLightningCanvas(int width, int height) {
+  auto result = std::make_shared<Canvas>(width, height, RGB(0, 0, 0, 0));
+  result->blocks["0"] = std::make_shared<SimpleBlock>("0", Point(0, 0), Point(width, height), RGB(0, 0, 0, 0));
+  return result;
+}

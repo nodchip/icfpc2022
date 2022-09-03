@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  auto loadInitialConfiguration = [&] {
+  auto loadInitialConfiguration = [&](PaintingPtr problem) {
     std::string config_path = problem_file;
     config_path.replace(config_path.find(".txt"), 4, ".initial.json");
     std::shared_ptr<Canvas> canvas;
@@ -76,6 +76,8 @@ int main(int argc, char* argv[]) {
         assert(false);
       }
       LOG(INFO) << fmt::format("Config  : {} ({} blocks)", config_path, canvas->blocks.size());
+    } else {
+      canvas = createLightningCanvas(problem->width, problem->height);
     }
     return canvas;
   };
@@ -125,7 +127,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::shared_ptr<Painting> problem = loadProblem();
-    std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(); // may not exist
+    std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
     if (!initial_solution.empty()) {
       auto cost = computeCost(*problem, initial_solution);
@@ -164,7 +166,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
         return -1;
       }
-      LOG(ERROR) << fmt::format("Solver   : {} (starting with {} instructions)", solver_name, arg.optional_initial_solution.size());
+      LOG(ERROR) << fmt::format("Solver   : {} (starting with {} instructions and {} blocks)", solver_name, arg.optional_initial_solution.size(), arg.canvas->blocks.size());
 
       const auto t0 = std::chrono::system_clock::now();
       out = solver->solve(arg);

@@ -26,3 +26,4 @@ struct Canvas
 typedef std::shared_ptr<Canvas> CanvasPtr;
 
 CanvasPtr loadCanvasFromJSONFile(const std::string& file_path);
+CanvasPtr createLightningCanvas(int width, int height);
