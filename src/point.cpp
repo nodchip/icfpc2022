@@ -31,3 +31,13 @@ Point Point::add(const Point& otherPoint) const {
 Point Point::subtract(const Point& otherPoint) const {
   return Point(px - otherPoint.px, py - otherPoint.py);
 }
+
+bool Point::operator==(const Point& rh) const
+{
+  return px == rh.px && py == rh.py;
+}
+
+bool Point::operator!=(const Point& rh) const
+{
+  return !(*this == rh);
+}

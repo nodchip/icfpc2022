@@ -23,4 +23,7 @@ struct Point
 
   Point subtract(const Point& otherPoint) const;
 
+  bool operator==(const Point& rh) const;
+
+  bool operator!=(const Point& rh) const;
 };

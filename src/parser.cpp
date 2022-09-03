@@ -20,7 +20,7 @@ ParseResult Parser::ParseLine(int line_number, std::string line)
   }
 
   if (line.starts_with("#")) {
-    auto result = std::make_shared<CommentInstruction>();
+    auto result = std::make_shared<CommentInstruction>(line.substr(1));
     result->comment = line.substr(1);
     return result;
   }

@@ -5,6 +5,17 @@
 #include "canvas.h"
 #include "point.h"
 
+enum class InstructionType {
+  NopInstructionType,
+  CommentInstructionType,
+  ColorInstructionType,
+  PointCutInstructionType,
+  VerticalCutInstructionType,
+  HorizontalCutInstructionType,
+  SwapInstructionType,
+  MergeInstructionType,
+};
+
 struct Instruction {
   virtual ~Instruction() = default;
   virtual int getBaseCost() const { return 0; }
@@ -20,6 +31,7 @@ struct NopInstruction : public Instruction {
 struct CommentInstruction : public Instruction {
   static constexpr int kBaseCost = 0;
   std::string comment;
+  CommentInstruction(const std::string& comment) : comment(comment) {}
   int getBaseCost() const override { return kBaseCost; }
   std::string toString() const override;
 };

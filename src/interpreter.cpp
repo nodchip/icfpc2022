@@ -385,6 +385,7 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(int line, cons
   // Processing Ends
 
   assert(false);
+  return nullptr;
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction) {
