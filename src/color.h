@@ -3,50 +3,23 @@
 #include <cstdint>
 
 struct RGBA {
-  int r;
-  int g;
-  int b;
-  int a;
+  int data[4];
   RGBA(int r = 0, int g = 0, int b = 0, int a = 0);
   bool operator<(const RGBA& rhs) const noexcept {
-    if (r != rhs.r)
-      return r < rhs.r;
-    if (g != rhs.g)
-      return g < rhs.g;
-    if (b != rhs.b)
-      return b < rhs.b;
-    return a < rhs.a;
+    return std::memcmp(data, rhs.data, sizeof(data)) < 0;
   }
   bool operator==(const RGBA& rhs) const noexcept {
-    return r == rhs.r && g == rhs.g && b == rhs.b && a == rhs.a;
+    return std::memcmp(data, rhs.data, sizeof(data)) == 0;
   }
   bool operator!=(const RGBA& rhs) const noexcept { return !(*this == rhs); }
   int operator[](std::size_t channel) const noexcept {
-    switch (channel) {
-      case 0:
-        return r;
-      case 1:
-        return g;
-      case 2:
-        return b;
-      default:
-        return a;
-    }
+    return data[channel];
   }
   int& operator[](std::size_t channel) noexcept {
-    switch (channel) {
-      case 0:
-        return r;
-      case 1:
-        return g;
-      case 2:
-        return b;
-      default:
-        return a;
-    }
+    return data[channel];
   }
   friend std::ostream& operator<<(std::ostream& os, const RGBA& rgba) {
-    os << "RGBA(" << rgba.r << ", " << rgba.g << ", " << rgba.b << ", " << rgba.a << ")";
+    os << "RGBA(" << rgba[0] << ", " << rgba[1] << ", " << rgba[2] << ", " << rgba[3] << ")";
     return os;
   }
 };

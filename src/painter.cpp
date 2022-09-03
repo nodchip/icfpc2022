@@ -68,10 +68,9 @@ std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point 
   for (int y = bottomLeft.py; y < topRight.py; ++y) {
     for (int x = bottomLeft.px; x < topRight.px; ++x) {
       ++count;
-      rgba[0] += painting(x, y).r;
-      rgba[1] += painting(x, y).g;
-      rgba[2] += painting(x, y).b;
-      rgba[3] += painting(x, y).a;
+      for (int c = 0; c < 4; ++c) {
+        rgba[c] += painting(x, y)[c];
+      }
     }
   }
   if (count > 0) {

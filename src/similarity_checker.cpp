@@ -2,10 +2,10 @@
 #include "similarity_checker.h"
 
 double SimilarityChecker::pixelDiff(const RGBA& p1, const RGBA& p2) {
-  const int rDist = (p1.r - p2.r) * (p1.r - p2.r);
-  const int gDist = (p1.g - p2.g) * (p1.g - p2.g);
-  const int bDist = (p1.b - p2.b) * (p1.b - p2.b);
-  const int aDist = (p1.a - p2.a) * (p1.a - p2.a);
+  const int rDist = (p1[0] - p2[0]) * (p1[0] - p2[0]);
+  const int gDist = (p1[1] - p2[1]) * (p1[1] - p2[1]);
+  const int bDist = (p1[2] - p2[2]) * (p1[2] - p2[2]);
+  const int aDist = (p1[3] - p2[3]) * (p1[3] - p2[3]);
   return sqrt(rDist + gDist + bDist + aDist);
 }
 

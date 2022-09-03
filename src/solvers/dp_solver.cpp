@@ -81,10 +81,10 @@ class DpSolver : public SolverBase {
         for (auto&& cc : state.color_count) {
           auto&& color = cc.first;
           const int n = cc.second;
-          sum_r += color.r * n;
-          sum_g += color.g * n;
-          sum_b += color.b * n;
-          sum_a += color.a * n;
+          sum_r += color[0] * n;
+          sum_g += color[1] * n;
+          sum_b += color[2] * n;
+          sum_a += color[3] * n;
         }
         int avg_r = sum_r / (kPixelPerGrid * kPixelPerGrid) + 0.5;
         int avg_g = sum_g / (kPixelPerGrid * kPixelPerGrid) + 0.5;
