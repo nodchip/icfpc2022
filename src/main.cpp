@@ -133,6 +133,9 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+      out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total)));
+      out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total)));
+      out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Total Cost : {}", cost->total)));
 
       // successive processing.
       arg.optional_initial_solution = out.solution;
