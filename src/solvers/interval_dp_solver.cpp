@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "solver_registry.h"
 #include "instruction.h"
+#include <array>
 #include <fmt/core.h>
 
 template <typename T, typename... Args>
