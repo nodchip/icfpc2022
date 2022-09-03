@@ -109,6 +109,7 @@
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
     <ClCompile Include="..\..\src\tests\test_instruction.cpp" />
     <ClCompile Include="..\..\src\tests\test_painter.cpp" />
+    <ClCompile Include="..\..\src\tests\test_parser.cpp" />
     <ClCompile Include="..\..\src\tests\test_string_util.cpp" />
     <ClCompile Include="..\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
