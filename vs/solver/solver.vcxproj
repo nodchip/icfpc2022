@@ -114,6 +114,7 @@
     <ClCompile Include="..\..\src\program.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
+    <ClCompile Include="..\..\src\solvers\mean_color.cpp" />
     <ClCompile Include="..\..\src\solver_registry.cpp" />
     <ClCompile Include="..\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

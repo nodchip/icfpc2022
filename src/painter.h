@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <optional>
 
 #include "color.h"
 #include "canvas.h"
@@ -24,3 +25,6 @@ struct Painting {
 using PaintingPtr = std::shared_ptr<Painting>;
 
 PaintingPtr loadPaintingFromFile(std::string file_path);
+
+// 半開区間
+std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight);

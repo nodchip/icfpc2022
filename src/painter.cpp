@@ -57,3 +57,22 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
 
   return result;
 }
+
+// 半開区間
+std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight) {
+  int64_t rgba[4] = {0, 0, 0, 0};
+  int64_t count = 0;
+  for (int y = bottomLeft.py; y < topRight.py; ++y) {
+    for (int x = bottomLeft.px; x < topRight.px; ++x) {
+      ++count;
+      rgba[0] += painting(x, y).r;
+      rgba[1] += painting(x, y).g;
+      rgba[2] += painting(x, y).b;
+      rgba[3] += painting(x, y).a;
+    }
+  }
+  if (count > 0) {
+    return RGBA(rgba[0] / count, rgba[1] / count, rgba[2] / count, rgba[3] / count);
+  }
+  return std::nullopt;
+}
