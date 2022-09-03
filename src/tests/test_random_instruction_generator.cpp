@@ -16,14 +16,14 @@ TEST(TestRandomInstructionGenerator, GenerateColorInstruction) {
   auto color_instruction = std::dynamic_pointer_cast<ColorInstruction>(instruction);
   EXPECT_TRUE(color_instruction);
   EXPECT_EQ("0", color_instruction->block_id);
-  EXPECT_LE(0, color_instruction->color.r);
-  EXPECT_GE(255, color_instruction->color.r);
-  EXPECT_LE(0, color_instruction->color.g);
-  EXPECT_GE(255, color_instruction->color.g);
-  EXPECT_LE(0, color_instruction->color.b);
-  EXPECT_GE(255, color_instruction->color.b);
-  EXPECT_LE(0, color_instruction->color.a);
-  EXPECT_GE(255, color_instruction->color.a);
+  EXPECT_LE(0, color_instruction->color[0]);
+  EXPECT_GE(255, color_instruction->color[0]);
+  EXPECT_LE(0, color_instruction->color[1]);
+  EXPECT_GE(255, color_instruction->color[1]);
+  EXPECT_LE(0, color_instruction->color[2]);
+  EXPECT_GE(255, color_instruction->color[2]);
+  EXPECT_LE(0, color_instruction->color[3]);
+  EXPECT_GE(255, color_instruction->color[3]);
 }
 
 TEST(TestRandomInstructionGenerator, GenerateHorizontalCutInstruction) {

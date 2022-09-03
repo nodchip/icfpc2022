@@ -123,7 +123,7 @@ public:
 
     // 操作列を構築する
     SolverOutputs ret;
-    const auto comment = std::make_shared<CommentInstruction>();
+    const auto comment = std::make_shared<CommentInstruction>("");
     comment->comment = fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W])));
     ret.solution.push_back(comment);
     std::vector<std::tuple<int, int, int, int, std::string>> stack;
