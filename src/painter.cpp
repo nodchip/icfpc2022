@@ -37,7 +37,9 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
   // |
   // v
   // HEIGHT
-  // 最初の要素はx=0, y=0次はx=1, y=0, ..
+  //
+  // 最初の要素(画像の左上)はx=0, y=H-1
+  // 次はx=1, y=H-1, ..
   auto result = std::make_shared<Painting>();
 
   std::ifstream ifs(file_path);
@@ -50,7 +52,7 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
     for (int x = 0; x < result->width; ++x) {
       int r = 0, g = 0, b = 0, a = 0;
       ifs >> r >> g >> b >> a;
-      (*result)(x, y) = RGBA(r, g, b, a);
+      (*result)(x, result->height - 1 - y) = RGBA(r, g, b, a);
     }
   }
   if (ifs.bad()) return nullptr;

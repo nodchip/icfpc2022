@@ -7,8 +7,20 @@
 SolverBase::Ptr SolverRegistry::getSolver(std::string name) {
   auto reg = getRegistry();
   auto it = reg.find(name);
-  if (it != reg.end()) return it->second.factory();
+  if (it != reg.end()) {
+    auto solver = it->second.factory();
+    solver->setOption(it->second.option);
+    return solver;
+  }
   return {};
+}
+
+void SolverRegistry::setOptionParser(CLI::App* app) {
+  for (auto& [k, v] : getRegistry()) {
+    if (v.option) {
+      v.option->setOptionParser(app);
+    }
+  }
 }
 
 std::string SolverRegistry::getCanonicalSolverName(std::string name) {

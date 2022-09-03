@@ -40,10 +40,10 @@ ParseResult Parser::ParseLine(int line_number, std::string line)
   std::smatch color_match_result;
   if (std::regex_match(line, color_match_result, COLOR_INSTRUCTION_REGEX)) {
     auto block_id = color_match_result[1].str();
-    auto r = std::stoi(color_match_result[2].str());
-    auto g = std::stoi(color_match_result[3].str());
-    auto b = std::stoi(color_match_result[4].str());
-    auto a = std::stoi(color_match_result[5].str());
+    auto r = std::stoi(color_match_result[6].str());
+    auto g = std::stoi(color_match_result[7].str());
+    auto b = std::stoi(color_match_result[8].str());
+    auto a = std::stoi(color_match_result[9].str());
     return std::make_shared<ColorInstruction>(block_id, Color(r, g, b, a));
   }
 

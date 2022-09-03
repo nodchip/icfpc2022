@@ -48,6 +48,8 @@ int main(int argc, char* argv[]) {
   sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
 
+  SolverRegistry::setOptionParser(sub_solve);
+
   CLI11_PARSE(app, argc, argv);
 
   if (sub_solve->parsed()) {
