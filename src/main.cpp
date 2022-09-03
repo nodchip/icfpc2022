@@ -141,8 +141,6 @@ int main(int argc, char* argv[]) {
       arg.optional_initial_solution = out.solution;
     }
 
-    // TODO: evaluate the solution.
-
     dumpInstructions(output_solution_isl, out.solution);
     LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), output_solution_isl);
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <thread>
+#include <fmt/format.h>
 #include "solver_registry.h"
 #include "instruction.h"
 
@@ -34,5 +35,31 @@ public:
   }
 };
 REGISTER_SOLVER("NullSolver", NullSolver);
+
+class RemoveConflictingColorSolver : public SolverBase {
+public:
+  RemoveConflictingColorSolver() { }
+  SolverOutputs solve(const SolverArguments &args) override {
+    SolverOutputs ret;
+    std::set<std::string> found;
+    int removed = 0;
+    for (auto it = args.optional_initial_solution.rbegin(); it != args.optional_initial_solution.rend(); ++it) {
+      if (auto color = std::dynamic_pointer_cast<ColorInstruction>(*it)) {
+        if (found.find(color->block_id) == found.end()) {
+          ret.solution.push_back(*it);
+          found.insert(color->block_id);
+        } else {
+          ++removed;
+        }
+      } else {
+        ret.solution.push_back(*it);
+      }
+    }
+    std::reverse(ret.solution.begin(), ret.solution.end());
+    LOG(INFO) << fmt::format("removed {} color instructions", removed);
+    return ret;
+  }
+};
+REGISTER_SOLVER("RemoveConflictingColorSolver", RemoveConflictingColorSolver);
 // vim:ts=2 sw=2 sts=2 et ci
 

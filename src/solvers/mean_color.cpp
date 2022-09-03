@@ -46,7 +46,7 @@ public:
           : meanColor(*args.painting, block->bottomLeft, block->topRight);
         assert(color);
         ret.solution.push_back(std::make_shared<ColorInstruction>(block->id, *color));
-        LOG(INFO) << "emit " << std::make_shared<ColorInstruction>(block->id, *color)->toString();
+        //LOG(INFO) << "emit " << std::make_shared<ColorInstruction>(block->id, *color)->toString();
       }
     }
 
