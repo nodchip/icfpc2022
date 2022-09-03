@@ -105,7 +105,7 @@ class DpSolver : public SolverBase {
     }
     SolverOutputs ret;
     auto&& best = SolveDp(0, 0, height, width);
-    const auto comment_instruction = std::make_shared<CommentInstruction>();
+    const auto comment_instruction = std::make_shared<CommentInstruction>("");
     comment_instruction->comment = fmt::format("cost = {0}", best.cost);
     LOG(INFO) << comment_instruction->comment;
     ret.solution.push_back(comment_instruction);
