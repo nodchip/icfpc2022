@@ -7,6 +7,7 @@
 #include <parser.h>
 #include <point.h>
 #include <canvas.h>
+#include <program.h>
 #include <instruction.h>
 #include <instruction_cost_calculator.h>
 
@@ -22,7 +23,7 @@ struct Interpreter
 {
   int top_level_id_counter = 0;
 
-  std::shared_ptr<InterpreterResult> Run(const std::string& code);
+  std::shared_ptr<InterpreterResult> Run(const Program& program);
 
 private:
 

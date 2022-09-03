@@ -3,10 +3,20 @@
 
 InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, int cost) : canvas(canvas), cost(cost) {}
 
-std::shared_ptr<InterpreterResult> Interpreter::Run(const std::string& code)
-{
-  // TODO(nodchip): Implement.
-  return nullptr;
+std::shared_ptr<InterpreterResult> Interpreter::Run(const Program& program) {
+  const auto& [metaData, instructions] = program;
+  auto canvas = std::make_shared<Canvas>(
+    program.metaData.width,
+    program.metaData.height,
+    program.metaData.backgroundColor
+    );
+  int totalCost = 0;
+  for (int index = 0; index < (int)instructions.size(); index++) {
+    const auto result = Interpret(index, canvas, instructions[index]);
+    canvas = result->canvas;
+    totalCost += result->cost;
+  }
+  return std::make_shared<InterpreterResult>(canvas, totalCost);
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::Interpret(int line_number, const std::shared_ptr<Canvas>& context, const std::shared_ptr<Instruction>& instruction) {
