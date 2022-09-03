@@ -30,6 +30,15 @@ CanvasPtr Canvas::Clone() const {
   return newCanvas;
 }
 
+int Canvas::calcTopLevelId() const {
+  int top_id = 0;
+  for (const auto& [id, _] : blocks) {
+    if (id.find('.') != std::string::npos) continue;
+    top_id = std::max(top_id, std::stoi(id));
+  }
+  return top_id;
+}
+
 CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
   nlohmann::json jconfig;
   {

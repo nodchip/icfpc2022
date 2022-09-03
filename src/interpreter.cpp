@@ -8,6 +8,7 @@ InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, int 
 
 std::shared_ptr<InterpreterResult> Interpreter::Run(CanvasPtr canvas, const std::vector<std::shared_ptr<Instruction>>& instructions)
 {
+  top_level_id_counter = canvas->calcTopLevelId();
   int totalCost = 0;
   for (const auto& inst : instructions) {
     const auto result = Interpret(canvas, inst);
