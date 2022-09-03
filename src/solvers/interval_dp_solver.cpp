@@ -48,6 +48,17 @@ public:
     const int H = yticks.size() - 1;
     const int W = xticks.size() - 1;
 
+    // 色の累積和を計算しておく
+    // O(height * width)
+    auto color_sums = CreateVector<int>(height + 1, width + 1, 4, 0);
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        for (int c = 0; c < 4; ++c) {
+          color_sums[y + 1][x + 1][c] = color_sums[y][x + 1][c] + color_sums[y + 1][x][c] - color_sums[y][x][c] + get_value(y, x, c);
+        }
+      }
+    }
+
     // グリッドに沿った長方形を color move で平均色に塗ったときのコストを求める
     // move のコストと similarity のコストを両方足しておく
     // O(height * width * (HW)^2)
@@ -59,16 +70,9 @@ public:
       for (int t = b + 1; t <= H; ++t) {
         for (int l = 0; l < W; ++l) {
           for (int r = l + 1; r <= W; ++r) {
-            std::array<double, 4> sums = {};
-            for (int y = yticks[b]; y < yticks[t]; ++y) {
-              for (int x = xticks[l]; x < xticks[r]; ++x) {
-                for (int c = 0; c < 4; ++c) {
-                  sums[c] += get_value(y, x, c);
-                }
-              }
-            }
             for (int c = 0; c < 4; ++c) {
-              colors[b][t][l][r][c] = std::round(sums[c] / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+              const double sum = color_sums[yticks[t]][xticks[r]][c] + color_sums[yticks[b]][xticks[l]][c] - color_sums[yticks[b]][xticks[r]][c] - color_sums[yticks[t]][xticks[l]][c];
+              colors[b][t][l][r][c] = std::round(sum / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
             }
             double cost = 0.0;
             for (int y = yticks[b]; y < yticks[t]; ++y) {
@@ -123,7 +127,7 @@ public:
 
     // 操作列を構築する
     SolverOutputs ret;
-    const auto comment = std::make_shared<CommentInstruction>();
+    const auto comment = std::make_shared<CommentInstruction>("");
     comment->comment = fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W])));
     ret.solution.push_back(comment);
     std::vector<std::tuple<int, int, int, int, std::string>> stack;

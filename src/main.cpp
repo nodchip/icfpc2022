@@ -8,6 +8,9 @@
 #include <fmt/core.h>
 
 #include "painter.h"
+#include "instruction_cost_calculator.h"
+#include "similarity_checker.h"
+#include "interpreter.h"
 #include "solver_registry.h"
 
 std::vector<std::string> split(std::string s, char delim) {
@@ -96,6 +99,15 @@ int main(int argc, char* argv[]) {
       const auto t1 = std::chrono::system_clock::now();
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
+
+      auto cost = computeCost(*problem, out.solution);
+      if (!cost) {
+        LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
+        return -1;
+      }
+      LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
+      LOG(INFO) << fmt::format("Sim. Cost  : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
+      LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
 
       // successive processing.
       arg.optional_initial_solution = out.solution;

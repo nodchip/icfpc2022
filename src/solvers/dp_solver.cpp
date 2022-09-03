@@ -81,10 +81,10 @@ class DpSolver : public SolverBase {
         for (auto&& cc : state.color_count) {
           auto&& color = cc.first;
           const int n = cc.second;
-          sum_r += color.r * n;
-          sum_g += color.g * n;
-          sum_b += color.b * n;
-          sum_a += color.a * n;
+          sum_r += color[0] * n;
+          sum_g += color[1] * n;
+          sum_b += color[2] * n;
+          sum_a += color[3] * n;
         }
         int avg_r = sum_r / (kPixelPerGrid * kPixelPerGrid) + 0.5;
         int avg_g = sum_g / (kPixelPerGrid * kPixelPerGrid) + 0.5;
@@ -105,6 +105,10 @@ class DpSolver : public SolverBase {
     }
     SolverOutputs ret;
     auto&& best = SolveDp(0, 0, height, width);
+    const auto comment_instruction = std::make_shared<CommentInstruction>("");
+    comment_instruction->comment = fmt::format("cost = {0}", best.cost);
+    LOG(INFO) << comment_instruction->comment;
+    ret.solution.push_back(comment_instruction);
     best.UpdateOutput("0", ret);
     return ret;
   }
@@ -131,7 +135,8 @@ class DpSolver : public SolverBase {
         state.instruction = std::make_shared<ColorInstruction>(
             "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
                     ->color);
-        state.cost = state0.similarity + state1.similarity +
+        state.similarity = state0.similarity + state1.similarity;
+        state.cost = state.similarity +
                      state.instruction->getBaseCost() * base_ratio;
         return state;
       }
@@ -155,7 +160,8 @@ class DpSolver : public SolverBase {
         state.instruction = std::make_shared<ColorInstruction>(
             "", std::dynamic_pointer_cast<ColorInstruction>(state0.instruction)
                     ->color);
-        state.cost = state0.similarity + state1.similarity +
+        state.similarity = state0.similarity + state1.similarity;
+        state.cost = state.similarity +
                      state.instruction->getBaseCost() * base_ratio;
         return state;
       }

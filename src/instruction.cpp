@@ -17,7 +17,7 @@ std::string CommentInstruction::toString() const {
 }
 
 std::string ColorInstruction::toString() const {
-  return fmt::format("color [{}] [{}, {}, {}, {}]", block_id, color.r, color.g, color.b, color.a);
+  return fmt::format("color [{}] [{}, {}, {}, {}]", block_id, color[0], color[1], color[2], color[3]);
 }
 
 std::string PointCutInstruction::toString() const {

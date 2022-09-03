@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "interpreter.h"
+#include "similarity_checker.h"
+#include <fmt/format.h>
 
 InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, int cost) : canvas(canvas), cost(cost) {}
 
@@ -383,6 +385,7 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(int line, cons
   // Processing Ends
 
   assert(false);
+  return nullptr;
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction) {
@@ -610,4 +613,19 @@ std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(int line, const std:
 
   assert(bottomToTop || leftToRight);
   return nullptr;
+}
+
+std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+  ProgramMetaData metaData = {problem.width, problem.height, RGBA(0, 0, 0, 0)};
+  Program program(metaData, instructions);
+  Interpreter interpreter;
+  std::shared_ptr<InterpreterResult> interpreter_result = interpreter.Run(program);
+  if (!interpreter_result) {
+    LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
+    return std::nullopt;
+  }
+  const int instructions_cost = interpreter_result->cost;
+  const int similarity_cost = SimilarityChecker::imageDiff(problem.frame, Painter::draw(*interpreter_result->canvas, false));
+  const int total_cost = instructions_cost + similarity_cost;
+  return CostBreakdown {instructions_cost, similarity_cost, total_cost, interpreter_result->canvas};
 }

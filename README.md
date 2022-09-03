@@ -45,7 +45,19 @@ Build Solution
 
 ### Linux
 
-TODO(someone): Write this section.
+```
+./solver solve IntervalDPSolver ../data/problems/8.txt
+```
+
+* Some solver accepts solver-specific options.
+  ```
+  ./solver solve QuadTree ../data/problems/8.txt --quad-tree-min-cell-size 4
+  ```
+
+* Add another solver after comma delimiter to run it successively.
+  ```
+  ./solver solve SplitToGrid,Mean ../data/problems/8.txt
+  ```
 
 ### Windows (console)
 

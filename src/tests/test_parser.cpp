@@ -34,10 +34,10 @@ TEST(TestParser, ParseLine_Color) {
   auto instruction = std::dynamic_pointer_cast<ColorInstruction>(std::get<std::shared_ptr<Instruction>>(result));
   EXPECT_TRUE(instruction);
   EXPECT_EQ("0.1", instruction->block_id);
-  EXPECT_EQ(105, instruction->color.r);
-  EXPECT_EQ(16, instruction->color.g);
-  EXPECT_EQ(44, instruction->color.b);
-  EXPECT_EQ(132, instruction->color.a);
+  EXPECT_EQ(105, instruction->color[0]);
+  EXPECT_EQ(16, instruction->color[1]);
+  EXPECT_EQ(44, instruction->color[2]);
+  EXPECT_EQ(132, instruction->color[3]);
 }
 
 TEST(TestParser, ParseLine_VerticalCut) {
