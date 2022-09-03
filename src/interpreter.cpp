@@ -49,6 +49,7 @@ std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(int line, const std:
   }
   // Processing Ends
   assert(false);
+  return nullptr;
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<PointCutInstruction>& point_cut_instruction) {
@@ -276,12 +277,91 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
   }
 
   assert(false);
+  return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<VerticalCutInstruction>& vertical_cut_instruction)
-{
-  // TODO(nodchip): Implement.
-  return nullptr;
+std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<VerticalCutInstruction>& vertical_cut_instruction) {
+  // TypeCheck Starts
+  const auto& [blockId, lineNumber] = *vertical_cut_instruction;
+  assert(context->blocks.count(blockId));
+  const auto& block = context->blocks[blockId];
+  assert(block->bottomLeft.px <= lineNumber && lineNumber <= block->topRight.px);
+  // TypeCheck Ends
+
+  // Scoring Starts
+  const auto cost = getCost(
+    *vertical_cut_instruction,
+    block->size.getScalarSize(),
+    context->size().getScalarSize()
+  );
+  // Scoring Ends
+
+  // Processing Starts
+  if (block->typ == BlockType::SimpleBlockType) { // TODO: if (auto simpleBlock = std:dynamic_po...
+    const auto& simpleBlock = std::dynamic_pointer_cast<SimpleBlock>(block);
+    const auto leftBlock = std::make_shared<SimpleBlock>(
+      blockId + ".0",
+      block->bottomLeft,
+      Point(lineNumber, block->topRight.py),
+      simpleBlock->color
+      );
+    const auto rightBlock = std::make_shared<SimpleBlock>(
+      blockId + ".1",
+      Point(lineNumber, block->bottomLeft.py),
+      block->topRight,
+      simpleBlock->color
+      );
+    context->blocks.erase(blockId);
+    context->blocks[blockId + ".0"] = leftBlock;
+    context->blocks[blockId + ".1"] = rightBlock;
+    return std::make_shared<InterpreterResult>(context, cost);
+  }
+
+  if (block->typ == BlockType::ComplexBlockType) {
+    std::vector<std::shared_ptr<SimpleBlock>> leftBlocks, rightBlocks;
+    const auto& complexBlock = std::dynamic_pointer_cast<ComplexBlock>(block);
+    for (const auto& subBlock : complexBlock->subBlocks) {
+      const auto& simpleBlock = std::dynamic_pointer_cast<SimpleBlock>(subBlock);
+      if (subBlock->bottomLeft.px >= lineNumber) {
+        rightBlocks.push_back(subBlock);
+        continue;
+      }
+      if (subBlock->topRight.px <= lineNumber) {
+        leftBlocks.push_back(subBlock);
+        continue;
+      }
+      leftBlocks.push_back(std::make_shared<SimpleBlock>(
+        "child",
+        subBlock->bottomLeft,
+        Point(lineNumber, subBlock->topRight.py),
+        simpleBlock->color
+        ));
+      rightBlocks.push_back(std::make_shared<SimpleBlock>(
+        "child",
+        Point(lineNumber, subBlock->bottomLeft.py),
+        subBlock->topRight,
+        simpleBlock->color
+        ));
+    }
+    const auto leftBlock = std::make_shared<ComplexBlock>(
+      blockId + ".0",
+      block->bottomLeft,
+      Point(lineNumber, block->topRight.py),
+      leftBlocks
+      );
+    const auto rightBlock = std::make_shared<ComplexBlock>(
+      blockId + ".1",
+      Point(lineNumber, block->bottomLeft.py),
+      block->topRight,
+      rightBlocks
+      );
+    context->blocks[blockId + ".0"] = leftBlock;
+    context->blocks[blockId + ".1"] = rightBlock;
+    return std::make_shared<InterpreterResult>(context, cost);
+  }
+  // Processing Ends
+
+  assert(false);
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction)
