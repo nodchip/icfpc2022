@@ -3,6 +3,11 @@
 #include <iostream>
 #include <fmt/format.h>
 #include "timer.h"
+#include "interpreter.h"
+
+std::optional<CostBreakdown> executeInputSolution(const SolverArguments& args) {
+  return computeCost(*args.painting, args.optional_initial_solution);
+}
 
 SolverBase::Ptr SolverRegistry::getSolver(std::string name) {
   auto reg = getRegistry();

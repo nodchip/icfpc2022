@@ -7,6 +7,7 @@
 #include <CLI/CLI.hpp>
 
 #include "instruction.h"
+#include "interpreter.h"
 #include "painter.h"
 
 
@@ -20,6 +21,8 @@ struct SolverArguments {
   std::optional<double> timeout_s;
   std::optional<unsigned int> random_seed;
 };
+
+std::optional<CostBreakdown> executeInputSolution(const SolverArguments& args);
 
 struct SolverOutputs {
   std::vector<std::shared_ptr<Instruction>> solution;
