@@ -22,7 +22,7 @@ public:
   struct Option : public OptionBase {
     bool use_median = false;
     void setOptionParser(CLI::App* app) override {
-      app->add_flag("--mean-color-use-median", use_median);
+      app->add_flag("--mean-color-use-median,!--mean-color-use-mean", use_median);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
