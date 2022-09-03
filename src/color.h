@@ -45,4 +45,8 @@ struct RGBA {
         return a;
     }
   }
+  friend std::ostream& operator<<(std::ostream& os, const RGBA& rgba) {
+    os << "RGBA(" << rgba.r << ", " << rgba.g << ", " << rgba.b << ", " << rgba.a << ")";
+    return os;
+  }
 };

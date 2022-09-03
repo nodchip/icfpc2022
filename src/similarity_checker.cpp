@@ -16,3 +16,14 @@ int SimilarityChecker::imageDiff(const Frame& f1, const Frame& f2) {
   }
   return (int)round(diff * alpha);
 }
+
+int SimilarityChecker::imageDiffinROI(const Painting& p1, const Painting& p2, Point bottomLeft, Point topRight) {
+  constexpr double alpha = 0.005;
+  double diff = 0;
+  for (int y = bottomLeft.py; y < topRight.py; ++y) {
+    for (int x = bottomLeft.px; x < topRight.px; ++x) {
+      diff += pixelDiff(p1(x, y), p2(x, y));
+    }
+  }
+  return (int)round(diff * alpha);
+}

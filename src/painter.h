@@ -28,3 +28,4 @@ PaintingPtr loadPaintingFromFile(std::string file_path);
 
 // 半開区間
 std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight);
+std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, int maxIter=100);

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "painter.h"
+#include <array>
 #include <cassert>
 
 Frame Painter::draw(const Canvas& canvas) {
@@ -77,4 +78,53 @@ std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point 
     return RGBA(rgba[0] / count, rgba[1] / count, rgba[2] / count, rgba[3] / count);
   }
   return std::nullopt;
+}
+
+std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, int maxIter) {
+  std::array<double, 4> estimate;
+  auto mean = meanColor(painting, bottomLeft, topRight);
+  if (!mean) return std::nullopt;
+  estimate[0] = (*mean)[0];
+  estimate[1] = (*mean)[1];
+  estimate[2] = (*mean)[2];
+  estimate[3] = (*mean)[3];
+
+  const size_t N = topRight.subtract(bottomLeft).getScalarSize();
+  std::vector<RGBA> colors(N);
+  size_t i = 0;
+  for (int y = bottomLeft.py; y < topRight.py; ++y) {
+    for (int x = bottomLeft.px; x < topRight.px; ++x) {
+      colors[i++] = painting(x, y);
+    }
+  }
+
+  auto weighted_average = [&colors](auto estimate, const auto& weights) {
+    std::array<double, 4> result = {0, 0, 0, 0};
+    double sum = 0.0;
+    for (size_t i = 0; i < colors.size(); ++i) {
+      result[0] += colors[i][0] * weights[i];
+      result[1] += colors[i][1] * weights[i];
+      result[2] += colors[i][2] * weights[i];
+      result[3] += colors[i][3] * weights[i];
+      sum += weights[i];
+    }
+    result[0] /= sum;
+    result[1] /= sum;
+    result[2] /= sum;
+    result[3] /= sum;
+    return result;
+  };
+  auto SQ = [](double x) { return x * x; };
+  auto dist_l2 = [SQ](const auto& x, const auto& y) {
+    return std::sqrt(SQ(x[0] - y[0]) + SQ(x[1] - y[1]) + SQ(x[2] - y[2]) + SQ(x[3] - y[3]));
+  };
+
+  std::vector<double> weights(N, 0.0);
+  for (int iter = 0; iter < maxIter; ++iter) {
+    for (size_t i = 0; i < N; ++i) {
+      weights[i] = 1.0 / (dist_l2(colors[i], estimate) + 1e-6);
+    }
+    estimate = weighted_average(estimate, weights);
+  }
+  return RGBA(int(std::round(estimate[0])), int(std::round(estimate[1])), int(std::round(estimate[2])), int(std::round(estimate[3])));
 }
