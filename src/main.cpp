@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
 
   CLI::App app{ "main module" };
   app.require_subcommand(0, 1);
+  bool list_solvers = false;
+  app.add_flag("--list-solvers", list_solvers);
 
   auto sub_solve = app.add_subcommand("solve");
   std::string solver_names;
@@ -89,6 +91,11 @@ int main(int argc, char* argv[]) {
     return initial_solution;
   };
 
+  if (list_solvers) {
+    SolverRegistry::displaySolvers();
+    return 0;
+  }
+
   if (sub_solve->parsed()) {
     std::vector<std::string> solver_name_list;
     for (auto solver_name : split(solver_names, ',')) {
@@ -112,6 +119,7 @@ int main(int argc, char* argv[]) {
 
     SolverOutputs out;
     for (auto solver_name : solver_name_list) {
+      LOG(INFO) << fmt::format("-----------[ {} ]-----------", solver_name);
       auto solver = SolverRegistry::getSolver(solver_name);
       if (!solver) {
         LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
