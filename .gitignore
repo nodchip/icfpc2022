@@ -63,6 +63,11 @@
 /vs/solver/_HEAD.txt
 .ipynb_checkpoints/
 
+# output files
+/vs/x64/Release/*.isl
+/vs/x64/Debug/*.isl
+/src/*.isl
+
 # www
 __pycache__/
 
