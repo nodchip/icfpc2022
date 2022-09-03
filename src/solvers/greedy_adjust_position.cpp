@@ -11,9 +11,11 @@ public:
   struct Option : public OptionBase {
     int loop = 20;
     int delta = 10;
+    bool verbose = false;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--loop", loop);
       app->add_option("--greedy-adjust-position-delta", delta);
+      app->add_flag("--greedy-adjust-verbose", verbose);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -22,6 +24,7 @@ public:
   SolverOutputs solve(const SolverArguments &args) override {
     const int delta = getOption<Option>()->delta;
     const int loop = getOption<Option>()->loop;
+    const bool verbose = getOption<Option>()->verbose;
     LOG(INFO) << "delta = " << delta << " loop = " << loop;
     SolverOutputs ret;
     ret.solution = args.optional_initial_solution;
@@ -31,7 +34,7 @@ public:
     int best_cost = std::numeric_limits<int>::max();
     std::vector<std::shared_ptr<Instruction>> best_inst = ret.solution;
     for (size_t iloop = 0; iloop < loop; ++iloop) {
-      LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
+      if (verbose) LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
       const int best_cost_at_the_beginning_of_loop = best_cost;
       for (size_t i = 0; i < work.size(); ++i) {
         //LOG(INFO) << fmt::format("i={}/{}({}%)", i, work.size(), 100.0 * i / work.size());
@@ -46,7 +49,7 @@ public:
               continue;
             }
             if (cost && 0 < cost->total && cost->total < best_cost) {
-              LOG(INFO) << fmt::format("[V] update cost {} -> {}", best_cost, cost->total);
+              if (verbose) LOG(INFO) << fmt::format("[V] update cost {} -> {}", best_cost, cost->total);
               best_cost = cost->total;
               best_inst = work;
             }
@@ -63,7 +66,7 @@ public:
               continue;
             }
             if (cost && 0 < cost->total && cost->total < best_cost) {
-              LOG(INFO) << fmt::format("[H] update cost {} -> {}", best_cost, cost->total);
+              if (verbose) LOG(INFO) << fmt::format("[H] update cost {} -> {}", best_cost, cost->total);
               best_cost = cost->total;
               best_inst = work;
             }
