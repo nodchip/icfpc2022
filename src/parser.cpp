@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "parser.h"
 
-#include <format>
 #include <regex>
+
+#include <fmt/color.h>
 
 #include "string_util.h"
 
@@ -27,14 +28,14 @@ ParseResult Parser::ParseLine(int line_number, std::string line)
   line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
   const std::string number_re = "(0|[1-9][0-9]*)";
   const std::string byte_re = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
-  const std::string color_re = std::format("{},{},{},{}", byte_re, byte_re, byte_re, byte_re);
-  const std::string block_id_re = std::format("{}(\\.{})*", number_re, number_re);
-  const std::string point_re = std::format("{},{}", number_re, number_re);
-  const std::regex COLOR_INSTRUCTION_REGEX = std::regex(std::format("color\\[({})\\]\\[({})\\]", block_id_re, color_re));
-  const std::regex LINE_CUT_INSTRUCTION_REGEX = std::regex(std::format("cut\\[({})\\]\\[(x|X|y|Y)\\]\\[({})\\]", block_id_re, number_re));
-  const std::regex POINT_CUT_INSTRUCTION_REGEX = std::regex(std::format("cut\\[({})\\]\\[({})\\]", block_id_re, point_re));
-  const std::regex MERGE_INSTRUCTION_REGEX = std::regex(std::format("merge\\[({})\\]\\[({})\\]", block_id_re, block_id_re));
-  const std::regex SWAP_INSTRUCTION_REGEX = std::regex(std::format("swap\\[({})\\]\\[({})\\]", block_id_re, block_id_re));
+  const std::string color_re = fmt::format("{},{},{},{}", byte_re, byte_re, byte_re, byte_re);
+  const std::string block_id_re = fmt::format("{}(\\.{})*", number_re, number_re);
+  const std::string point_re = fmt::format("{},{}", number_re, number_re);
+  const std::regex COLOR_INSTRUCTION_REGEX = std::regex(fmt::format("color\\[({})\\]\\[({})\\]", block_id_re, color_re));
+  const std::regex LINE_CUT_INSTRUCTION_REGEX = std::regex(fmt::format("cut\\[({})\\]\\[(x|X|y|Y)\\]\\[({})\\]", block_id_re, number_re));
+  const std::regex POINT_CUT_INSTRUCTION_REGEX = std::regex(fmt::format("cut\\[({})\\]\\[({})\\]", block_id_re, point_re));
+  const std::regex MERGE_INSTRUCTION_REGEX = std::regex(fmt::format("merge\\[({})\\]\\[({})\\]", block_id_re, block_id_re));
+  const std::regex SWAP_INSTRUCTION_REGEX = std::regex(fmt::format("swap\\[({})\\]\\[({})\\]", block_id_re, block_id_re));
 
   std::smatch color_match_result;
   if (std::regex_match(line, color_match_result, COLOR_INSTRUCTION_REGEX)) {
@@ -83,6 +84,6 @@ ParseResult Parser::ParseLine(int line_number, std::string line)
     return std::make_shared<SwapInstruction>(block_id1, block_id2);
   }
 
-  auto message = std::format("Cannot parse the instruction[{}]!", line);
+  auto message = fmt::format("Cannot parse the instruction[{}]!", line);
   return std::make_shared<ParseError>(line_number, message);
 }

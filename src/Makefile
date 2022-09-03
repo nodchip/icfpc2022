@@ -2,7 +2,7 @@ LIB_PATH=$(abspath ../libs)
 BUILD_PATH=build
 GTEST_DIR=$(LIB_PATH)/googletest/googletest
 
-CXXFLAGS+=-O2 -Wall -Wno-sign-compare -std=c++17 -march=native
+CXXFLAGS+=-O2 -Wall -Wno-sign-compare -std=c++20 -march=native
 CXXFLAGS+=-Wno-unused-variable -Wno-unused-function
 CXXFLAGS+=-I.
 CXXFLAGS+=-MMD -MP
@@ -36,7 +36,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp instruction_cost_calculator.cpp interpreter.cpp painter.cpp parser.cpp point.cpp program.cpp similarity_checker.cpp solver_registry.cpp
+SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp instruction_cost_calculator.cpp interpreter.cpp painter.cpp parser.cpp point.cpp program.cpp similarity_checker.cpp solver_registry.cpp string_util.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
