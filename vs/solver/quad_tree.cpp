@@ -65,8 +65,17 @@ struct DividedPainting {
 
 class QuadTree : public SolverBase {
 public:
+    struct Option : public OptionBase {
+      int min_cell_size = -1;
+      void setOptionParser(CLI::App* app) override {
+        app->add_option("--quad-tree-min-cell-size", min_cell_size);
+      }
+    };
+    virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
+
     QuadTree() { }
     SolverOutputs solve(const SolverArguments& args) override {
+        LOG(INFO) << "min_cell_size = " << getOption<Option>()->min_cell_size;
         SolverOutputs ret;
 
         auto initial_paint = DividedPainting(args.painting, SimpleBlock("0", Point(0, 0), Point(args.painting->width, args.painting->height), Color(0, 0, 0, 0)));
@@ -78,6 +87,9 @@ public:
             auto color_var = paint.CountColorVariation();
             auto most_common_color = paint.MostCommonColor(color_var);
             if (paint.block.color != most_common_color) paint.Coloring(most_common_color, ret.solution);
+
+            if (std::min(paint.block.topRight.px - paint.block.bottomLeft.px, paint.block.topRight.py - paint.block.bottomLeft.py) <= getOption<Option>()->min_cell_size)
+              continue;
 
             if (color_var.size() > 1) {
                 auto next_point = paint.Midpoint();
@@ -91,5 +103,5 @@ public:
     }
 };
 
-REGISTER_SOLVER("QuadTree", QuadTree);
+REGISTER_SOLVER_WITH_OPTION("QuadTree", QuadTree, QuadTree::Option);
 // vim:ts=2 sw=2 sts=2 et ci

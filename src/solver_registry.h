@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <cassert>
+#include <CLI/CLI.hpp>
 
 #include "instruction.h"
 #include "painter.h"
@@ -24,29 +25,51 @@ struct SolverOutputs {
   std::vector<std::shared_ptr<Instruction>> solution;
 };
 
+class OptionBase {
+public:
+  using Ptr = std::shared_ptr<OptionBase>;
+
+  virtual ~OptionBase() {}
+  virtual void setOptionParser(CLI::App* app) { assert(false); }
+};
+
 class SolverBase {
 public:
   using Ptr = std::shared_ptr<SolverBase>;
 
   virtual ~SolverBase() {}
   virtual SolverOutputs solve(const SolverArguments &paramin) = 0;
+  virtual OptionBase::Ptr createOption() { return std::make_shared<OptionBase>(); }
+  void setOption(OptionBase::Ptr option_) { option = option_; }
+
+  template <typename DerivedOption>
+  std::shared_ptr<DerivedOption> getOption() {
+    return std::dynamic_pointer_cast<DerivedOption>(option);
+  }
+
+private:
+  OptionBase::Ptr option;
 };
 
 #define CONCAT_SUB(a, b) a##b
 #define CONCAT(a, b) CONCAT_SUB(a, b)
 #define REGISTER_SOLVER(name, cls) \
-  static SolverRegistry CONCAT(_register_solver_, __LINE__) = {name, {__FILE__, [] { return std::make_shared<cls>(); } }}
+  static SolverRegistry CONCAT(_register_solver_, __LINE__) = {name, {__FILE__, [] { return std::make_shared<cls>(); }, nullptr }}
+#define REGISTER_SOLVER_WITH_OPTION(name, cls, option_cls) \
+  static SolverRegistry CONCAT(_register_solver_, __LINE__) = {name, {__FILE__, [] { return std::make_shared<cls>(); }, std::make_shared<option_cls>() }}
 
 struct SolverRegistry {
   struct SolverEntry {
     std::string file_name;
     std::function<SolverBase::Ptr(void)> factory;
+    OptionBase::Ptr option;
   };
   static std::map<std::string, SolverEntry>& getRegistry() {
     static std::map<std::string, SolverEntry> s_solver_registry;
     return s_solver_registry;
   }
   static SolverBase::Ptr getSolver(std::string name);
+  static void setOptionParser(CLI::App* app);
   static std::string getCanonicalSolverName(std::string name);
 
   SolverRegistry(std::string name, SolverEntry entry) {
