@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\src\solvers\interval_dp_solver2.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\interval_dp_solver3.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
