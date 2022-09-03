@@ -113,6 +113,7 @@
     <ClCompile Include="..\..\src\point.cpp" />
     <ClCompile Include="..\..\src\random_instruction_generator.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
+    <ClCompile Include="..\..\src\solvers\color_only_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\greedy_adjust_position.cpp" />
     <ClCompile Include="..\..\src\solvers\interval_dp_solver.cpp" />

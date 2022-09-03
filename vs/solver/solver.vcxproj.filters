@@ -87,6 +87,9 @@
     <ClCompile Include="..\..\src\solvers\greedy_adjust_position.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\color_only_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
