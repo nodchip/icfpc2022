@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include <thread>
 #include <queue>
+#include <format>
 #include "solver_registry.h"
+#include <fmt/format.h>
 #include "instruction.h"
 
 struct DividedPainting {
@@ -68,7 +70,9 @@ public:
     QuadTree() { }
     SolverOutputs solve(const SolverArguments& args) override {
         SolverOutputs ret;
-
+        assert(args.painting);
+        LOG(INFO) << "arrived";
+        LOG(INFO) << fmt::format("width is{}, height is{}", args.painting->width, args.painting->height);
         auto initial_paint = DividedPainting(args.painting, SimpleBlock("0", Point(0, 0), Point(args.painting->width, args.painting->height), Color(0, 0, 0, 0)));
         std::queue<DividedPainting> Q;
         Q.push(initial_paint);
