@@ -10,7 +10,6 @@ double SimilarityChecker::pixelDiff(const RGBA& p1, const RGBA& p2) {
 }
 
 int SimilarityChecker::imageDiff(const Frame& f1, const Frame& f2) {
-  constexpr double alpha = 0.005;
   double diff = 0;
   for (int i = 0; i < f1.size(); i++) {
     diff += pixelDiff(f1[i], f2[i]);
