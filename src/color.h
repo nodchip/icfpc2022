@@ -1,7 +1,6 @@
 #pragma once
 
-struct RGBA
-{
+struct RGBA {
   int r;
   int g;
   int b;
@@ -16,8 +15,18 @@ struct RGBA
   bool operator==(const RGBA& rhs) const noexcept {
     return r == rhs.r && g == rhs.g && b == rhs.b && a == rhs.a;
   }
-  bool operator!=(const RGBA& rhs) const noexcept {
-    return !(*this == rhs);
+  bool operator!=(const RGBA& rhs) const noexcept { return !(*this == rhs); }
+  bool operator<(const RGBA& rhs) const noexcept {
+    if (r != rhs.r) {
+      return r < rhs.r;
+    }
+    if (g != rhs.g) {
+      return g < rhs.g;
+    }
+    if (b != rhs.b) {
+      return b < rhs.b;
+    }
+    return a < rhs.a;
   }
   int operator[](std::size_t channel) const noexcept {
     switch (channel) {
