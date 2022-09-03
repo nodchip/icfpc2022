@@ -2,12 +2,14 @@
 
 #include <memory>
 #include <string>
+#include <optional>
 #include <cassert>
 
 #include <parser.h>
 #include <point.h>
 #include <canvas.h>
 #include <program.h>
+#include <painter.h>
 #include <instruction.h>
 #include <instruction_cost_calculator.h>
 
@@ -42,4 +44,12 @@ private:
 
   std::shared_ptr<InterpreterResult> MergeCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<MergeInstruction>& merge_instruction);
 };
+
+struct CostBreakdown {
+  int instruction;
+  int similarity;
+  int total;
+  std::shared_ptr<Canvas> canvas;
+};
+std::optional<CostBreakdown> computeCost(const Painting& problem, const std::vector<std::shared_ptr<Instruction>>& instructions);
 
