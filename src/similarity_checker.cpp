@@ -1,5 +1,5 @@
-#include "similarity_checker.h"
 #include "stdafx.h"
+#include "similarity_checker.h"
 
 double SimilarityChecker::pixelDiff(const RGBA& p1, const RGBA& p2) {
   const int rDist = (p1.r - p2.r) * (p1.r - p2.r);
