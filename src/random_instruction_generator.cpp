@@ -39,6 +39,10 @@ std::shared_ptr<Instruction> RandomInstructionGenerator::GenerateRandomInstructi
   case InstructionType::MergeInstructionType: {
     return GenerateMergeInstruction(state);
   }
+  case InstructionType::NopInstructionType:
+  case InstructionType::CommentInstructionType: {
+    break;
+  }
   }
   return std::make_shared<CommentInstruction>("Should not come here");
 }
