@@ -32,13 +32,19 @@ public:
     std::vector<std::shared_ptr<Instruction>> best_inst = ret.solution;
     for (size_t iloop = 0; iloop < loop; ++iloop) {
       LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
+      const int best_cost_at_the_beginning_of_loop = best_cost;
       for (size_t i = 0; i < work.size(); ++i) {
         //LOG(INFO) << fmt::format("i={}/{}({}%)", i, work.size(), 100.0 * i / work.size());
         if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(best_inst[i])) {
           for (int d = -delta; d <= delta; ++d) {
             auto new_vcut = std::make_shared<VerticalCutInstruction>(vcut->block_id, vcut->lineNumber + d);
             work[i] = new_vcut;
-            auto cost = computeCost(*args.painting, work);
+            std::optional<CostBreakdown> cost;
+            try { 
+              cost = computeCost(*args.painting, work);
+            } catch (const InvalidInstructionException& e) {
+              continue;
+            }
             if (cost && 0 < cost->total && cost->total < best_cost) {
               LOG(INFO) << fmt::format("[V] update cost {} -> {}", best_cost, cost->total);
               best_cost = cost->total;
@@ -50,7 +56,12 @@ public:
           for (int d = -delta; d <= delta; ++d) {
             auto new_hcut = std::make_shared<HorizontalCutInstruction>(hcut->block_id, hcut->lineNumber + d);
             work[i] = new_hcut;
-            auto cost = computeCost(*args.painting, work);
+            std::optional<CostBreakdown> cost;
+            try { 
+              cost = computeCost(*args.painting, work);
+            } catch (const InvalidInstructionException& e) {
+              continue;
+            }
             if (cost && 0 < cost->total && cost->total < best_cost) {
               LOG(INFO) << fmt::format("[H] update cost {} -> {}", best_cost, cost->total);
               best_cost = cost->total;
@@ -59,6 +70,9 @@ public:
           }
           work[i] = hcut;
         }
+      }
+      if (best_cost == best_cost_at_the_beginning_of_loop) {
+        break;
       }
     }
 

@@ -1,13 +1,14 @@
 #include "stdafx.h"
 #include <cassert>
 
+#include "instruction.h"
 #include "block.h"
 
 SimpleBlock::SimpleBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const RGBA& color)
   : Block(BlockType::SimpleBlockType, id, bottomLeft, topRight), color(color)
 {
-  assert(bottomLeft.px <= topRight.px && bottomLeft.py <= topRight.py);
-  assert(size.getScalarSize() > 0);
+  assert_throw_invalid_instruction(bottomLeft.px <= topRight.px && bottomLeft.py <= topRight.py);
+  assert_throw_invalid_instruction(size.getScalarSize() > 0);
 }
 
 std::vector<std::shared_ptr<SimpleBlock>> SimpleBlock::getChildren() const {
@@ -18,7 +19,7 @@ std::vector<std::shared_ptr<SimpleBlock>> SimpleBlock::getChildren() const {
 
 ComplexBlock::ComplexBlock(const std::string& id, const Point& bottomLeft, const Point& topRight, const std::vector<std::shared_ptr<SimpleBlock>>& subBlocks) : Block(BlockType::ComplexBlockType, id, bottomLeft, topRight), subBlocks(subBlocks)
 {
-  assert(size.getScalarSize() > 0);
+  assert_throw_invalid_instruction(size.getScalarSize() > 0);
 }
 
 std::vector<std::shared_ptr<SimpleBlock>> ComplexBlock::getChildren() const {

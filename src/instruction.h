@@ -5,6 +5,12 @@
 #include "canvas.h"
 #include "point.h"
 
+#define assert_throw_invalid_instruction(x) do { if (!(x)) throw InvalidInstructionException(); } while (false)
+class InvalidInstructionException : public std::runtime_error {
+public:
+  InvalidInstructionException() : std::runtime_error("invalid instruction detected") {}
+};
+
 enum class InstructionType {
   NopInstructionType,
   CommentInstructionType,

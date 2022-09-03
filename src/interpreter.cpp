@@ -3,6 +3,7 @@
 #include "similarity_checker.h"
 #include <fmt/format.h>
 
+
 InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, int cost) : canvas(canvas), cost(cost) {}
 
 std::shared_ptr<InterpreterResult> Interpreter::Run(const Program& program) {
@@ -80,7 +81,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(int line, const s
   const auto& [blockId, point] = *point_cut_instruction;
   assert(context->blocks.count(blockId));
   const auto& block = context->blocks[blockId];
-  assert(point.isStrictryInside(block->bottomLeft, block->topRight));
+  assert_throw_invalid_instruction(point.isStrictryInside(block->bottomLeft, block->topRight));
   // TypeCheck Ends
 
   // Scoring Starts
@@ -308,7 +309,7 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(int line, cons
   const auto& [blockId, lineNumber] = *vertical_cut_instruction;
   assert(context->blocks.count(blockId));
   const auto& block = context->blocks[blockId];
-  assert(block->bottomLeft.px <= lineNumber && lineNumber <= block->topRight.px);
+  assert_throw_invalid_instruction(block->bottomLeft.px <= lineNumber && lineNumber <= block->topRight.px);
   // TypeCheck Ends
 
   // Scoring Starts
@@ -393,7 +394,7 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(int line, co
   const auto& [blockId, lineNumber] = *horizontal_cut_instruction;
   assert(context->blocks.count(blockId));
   const auto& block = context->blocks[blockId];
-  assert(block->bottomLeft.py <= lineNumber && lineNumber <= block->topRight.py);
+  assert_throw_invalid_instruction(block->bottomLeft.py <= lineNumber && lineNumber <= block->topRight.py);
   // TypeCheck Ends
 
   // Scoring Starts
@@ -492,7 +493,7 @@ std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(int line, const std::
   // Scoring Ends
 
   // Processing Starts
-  assert(block1->size.px == block2->size.px && block1->size.py == block2->size.py);
+  assert_throw_invalid_instruction(block1->size.px == block2->size.px && block1->size.py == block2->size.py);
 
   std::shared_ptr<Block> newBlock1, newBlock2;
   if (block1->typ == BlockType::SimpleBlockType) {
