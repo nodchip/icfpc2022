@@ -26,6 +26,8 @@ struct Canvas
 
   CanvasPtr Clone() const;
 
+  int calcTopLevelId() const;
+
 };
 
 CanvasPtr loadCanvasFromJSONFile(const std::string& file_path);
