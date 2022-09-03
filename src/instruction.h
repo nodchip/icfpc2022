@@ -12,6 +12,17 @@ struct Instruction
   virtual std::string toString() const;
 };
 
+struct NopInstruction : public Instruction {
+  int getBaseCost() const override { return 0; }
+  std::string toString() const override;
+};
+
+struct CommentInstruction : public Instruction {
+  std::string comment;
+  int getBaseCost() const override { return 0; }
+  std::string toString() const override;
+};
+
 struct ColorInstruction : public Instruction
 {
   std::string block_id;

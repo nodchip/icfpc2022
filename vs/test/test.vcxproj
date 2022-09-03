@@ -105,6 +105,7 @@
     <ClCompile Include="..\..\src\point.cpp" />
     <ClCompile Include="..\..\src\program.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
+    <ClCompile Include="..\..\src\string_util.cpp" />
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
     <ClCompile Include="..\..\src\tests\test_instruction.cpp" />
     <ClCompile Include="..\..\src\tests\test_painter.cpp" />
@@ -112,6 +113,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="test_string_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -129,6 +131,7 @@
     <ClInclude Include="..\..\src\program.h" />
     <ClInclude Include="..\..\src\similarity_checker.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\string_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

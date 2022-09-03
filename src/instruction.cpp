@@ -8,6 +8,14 @@ std::string Instruction::toString() const {
   return "INVALID";
 }
 
+std::string NopInstruction::toString() const {
+  return fmt::format("");
+}
+
+std::string CommentInstruction::toString() const {
+  return fmt::format("# {}", comment);
+}
+
 std::string ColorInstruction::toString() const {
   return fmt::format("color [{}] [{}, {}, {}, {}]", block_id, color.r, color.g, color.b, color.a);
 }

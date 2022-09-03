@@ -1,16 +1,24 @@
+// Copyright (c) 2017-2022, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #pragma once
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
-
+// [CLI11:public_includes:set]
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
+// [CLI11:public_includes:end]
 
-#include "CLI/Error.hpp"
-#include "CLI/StringTools.hpp"
+#include "Error.hpp"
+#include "StringTools.hpp"
 
 namespace CLI {
+// [CLI11:split_hpp:verbatim]
+
 namespace detail {
 
 // Returns false if not a short option. Otherwise, sets opt name and rest and returns true
@@ -130,5 +138,6 @@ get_names(const std::vector<std::string> &input) {
         short_names, long_names, pos_name);
 }
 
-} // namespace detail
-} // namespace CLI
+}  // namespace detail
+// [CLI11:split_hpp:end]
+}  // namespace CLI

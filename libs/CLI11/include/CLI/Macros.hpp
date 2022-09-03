@@ -1,11 +1,14 @@
+// Copyright (c) 2017-2022, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #pragma once
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
+// [CLI11:macros_hpp:verbatim]
 
-// [CLI11:verbatim]
-
-// The following version macro is very similar to the one in PyBind11
+// The following version macro is very similar to the one in pybind11
 #if !(defined(_MSC_VER) && __cplusplus == 199711L) && !defined(__INTEL_COMPILER)
 #if __cplusplus >= 201402L
 #define CLI11_CPP14
@@ -23,7 +26,7 @@
 #define CLI11_CPP14
 #if _MSVC_LANG > 201402L && _MSC_VER >= 1910
 #define CLI11_CPP17
-#if __MSVC_LANG > 201703L && _MSC_VER >= 1910
+#if _MSVC_LANG > 201703L && _MSC_VER >= 1910
 #define CLI11_CPP20
 #endif
 #endif
@@ -38,4 +41,20 @@
 #define CLI11_DEPRECATED(reason) __attribute__((deprecated(reason)))
 #endif
 
-// [CLI11:verbatim]
+/** detection of rtti */
+#ifndef CLI11_USE_STATIC_RTTI
+#if(defined(_HAS_STATIC_RTTI) && _HAS_STATIC_RTTI)
+#define CLI11_USE_STATIC_RTTI 1
+#elif defined(__cpp_rtti)
+#if(defined(_CPPRTTI) && _CPPRTTI == 0)
+#define CLI11_USE_STATIC_RTTI 1
+#else
+#define CLI11_USE_STATIC_RTTI 0
+#endif
+#elif(defined(__GCC_RTTI) && __GXX_RTTI)
+#define CLI11_USE_STATIC_RTTI 0
+#else
+#define CLI11_USE_STATIC_RTTI 1
+#endif
+#endif
+// [CLI11:macros_hpp:end]

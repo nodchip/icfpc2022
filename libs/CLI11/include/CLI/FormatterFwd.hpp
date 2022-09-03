@@ -1,15 +1,22 @@
+// Copyright (c) 2017-2022, University of Cincinnati, developed by Henry Schreiner
+// under NSF AWARD 1414736 and by the respective contributors.
+// All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #pragma once
 
-// Distributed under the 3-Clause BSD License.  See accompanying
-// file LICENSE or https://github.com/CLIUtils/CLI11 for details.
-
+// [CLI11:public_includes:set]
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
+// [CLI11:public_includes:end]
 
-#include "CLI/StringTools.hpp"
+#include "StringTools.hpp"
 
 namespace CLI {
+// [CLI11:formatter_fwd_hpp:verbatim]
 
 class Option;
 class App;
@@ -20,9 +27,9 @@ class App;
 /// the second argument.
 
 enum class AppFormatMode {
-    Normal, //< The normal, detailed help
-    All,    //< A fully expanded help
-    Sub,    //< Used when printed as part of expanded subcommand
+    Normal,  ///< The normal, detailed help
+    All,     ///< A fully expanded help
+    Sub,     ///< Used when printed as part of expanded subcommand
 };
 
 /// This is the minimum requirements to run a formatter.
@@ -51,7 +58,7 @@ class FormatterBase {
     FormatterBase(FormatterBase &&) = default;
 
     /// Adding a destructor in this form to work around bug in GCC 4.7
-    virtual ~FormatterBase() noexcept {} // NOLINT(modernize-use-equals-default)
+    virtual ~FormatterBase() noexcept {}  // NOLINT(modernize-use-equals-default)
 
     /// This is the key method that puts together help
     virtual std::string make_help(const App *, std::string, AppFormatMode) const = 0;
@@ -96,7 +103,7 @@ class FormatterLambda final : public FormatterBase {
     explicit FormatterLambda(funct_t funct) : lambda_(std::move(funct)) {}
 
     /// Adding a destructor (mostly to make GCC 4.7 happy)
-    ~FormatterLambda() noexcept override {} // NOLINT(modernize-use-equals-default)
+    ~FormatterLambda() noexcept override {}  // NOLINT(modernize-use-equals-default)
 
     /// This will simply call the lambda function
     std::string make_help(const App *app, std::string name, AppFormatMode mode) const override {
@@ -173,4 +180,5 @@ class Formatter : public FormatterBase {
     ///@}
 };
 
-} // namespace CLI
+// [CLI11:formatter_fwd_hpp:end]
+}  // namespace CLI
