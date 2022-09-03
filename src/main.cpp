@@ -47,6 +47,7 @@ int main(int argc, char* argv[]) {
   std::string output_solution_isl = "output.isl";
   double timeout_s = -1.0;
   bool visualize = false;
+  bool output_phase_isl = true;
   bool output_meta = true;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
   sub_solve->add_option("initial_solution_isl", initial_solution_isl, "input solution ISL file path (optional)");
   sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
+  sub_solve->add_flag("--output-phase,!--no-output-phase", output_phase_isl, "output phase ISL files (outfile.1.isl, outfile.2.isl, ..)");
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
   SolverRegistry::setOptionParser(sub_solve);
 
@@ -128,9 +130,19 @@ int main(int argc, char* argv[]) {
       arg.timeout_s = timeout_s;
     }
 
+    int phase = 1;
+    auto output_phase_file_path = [output_solution_isl](int phase) {
+      auto ext = output_solution_isl.find(".isl");
+      if (ext != std::string::npos) {
+        return fmt::format("{}.{}.isl", output_solution_isl.substr(0, ext), phase);
+      } else {
+        return fmt::format("{}.{}", output_solution_isl, phase);
+      }
+    };
+
     SolverOutputs out;
     for (auto solver_name : solver_name_list) {
-      LOG(INFO) << fmt::format("-----------[ {} ]-----------", solver_name);
+      LOG(INFO) << fmt::format("-----------[ {}: {} ]-----------", phase, solver_name);
       auto solver = SolverRegistry::getSolver(solver_name);
       if (!solver) {
         LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
@@ -152,16 +164,24 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+      out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Solver     : {}", solver_name)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Total Cost : {}", cost->total)));
 
+      if (output_phase_isl) {
+        auto file_path = output_phase_file_path(phase);
+        dumpInstructions(file_path, out.solution);
+        LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
+      }
+
       // successive processing.
       arg.optional_initial_solution = out.solution;
+      ++phase;
     }
 
     dumpInstructions(output_solution_isl, out.solution);
-    LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), output_solution_isl);
+    LOG(INFO) << fmt::format("Dumped final {} instructions to : {}", out.solution.size(), output_solution_isl);
 
     return 0;
   }
