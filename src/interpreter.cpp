@@ -450,10 +450,65 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(int line, co
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<SwapInstruction>& swap_instruction)
-{
-  // TODO(nodchip): Implement.
-  return nullptr;
+std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<SwapInstruction>& swap_instruction) {
+  // TypeCheck Starts
+  const auto& [blockId1, blockId2] = *swap_instruction;
+  assert(context->blocks.count(blockId1));
+  assert(context->blocks.count(blockId2));
+  const auto& block1 = context->blocks[blockId1];
+  const auto& block2 = context->blocks[blockId2];
+  // TypeCheck Ends
+
+  // Scoring Starts
+  const auto cost = getCost(
+    *swap_instruction,
+    block1->size.getScalarSize(),
+    context->size().getScalarSize()
+  );
+  // Scoring Ends
+
+  // Processing Starts
+  assert(block1->size.px == block2->size.px && block1->size.py == block2->size.py);
+
+  std::shared_ptr<Block> newBlock1, newBlock2;
+  if (block1->typ == BlockType::SimpleBlockType) {
+    newBlock2 = std::make_shared<SimpleBlock>(
+      blockId1,
+      block2->bottomLeft,
+      block2->topRight,
+      std::dynamic_pointer_cast<SimpleBlock>(block1)->color
+      );
+  }
+  else {
+    newBlock2 = std::make_shared<ComplexBlock>(
+      blockId1,
+      block2->bottomLeft,
+      block2->topRight,
+      std::dynamic_pointer_cast<ComplexBlock>(block1)->offsetChildren(block2->bottomLeft)
+      );
+  }
+  if (block2->typ == BlockType::SimpleBlockType) {
+    newBlock1 = std::make_shared<SimpleBlock>(
+      blockId2,
+      block1->bottomLeft,
+      block1->topRight,
+      std::dynamic_pointer_cast<SimpleBlock>(block2)->color
+      );
+  }
+  else {
+    newBlock1 = std::make_shared<ComplexBlock>(
+      blockId2,
+      block1->bottomLeft,
+      block1->topRight,
+      std::dynamic_pointer_cast<ComplexBlock>(block2)->offsetChildren(block1->bottomLeft)
+      );
+  }
+
+  context->blocks[blockId1] = newBlock2;
+  context->blocks[blockId2] = newBlock1;
+
+  return std::make_shared<InterpreterResult>(context, cost);
+  // Processing Ends
 }
 
 std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(int line, const std::shared_ptr<Canvas>& context, const std::shared_ptr<MergeInstruction>& merge_instruction)
