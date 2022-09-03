@@ -15,7 +15,7 @@ TEST(TestPainter, loadPaintingFromFile) {
   ASSERT_TRUE(painting);
   EXPECT_EQ(painting->width, 400);
   EXPECT_EQ(painting->height, 400);
-  EXPECT_EQ((*painting)(73, 54), RGBA(92, 225, 230, 255)); // "F" of ICFCP
+  EXPECT_EQ((*painting)(73, 345), RGBA(92, 225, 230, 255)); // "F" of ICFCP
 }
 
 
