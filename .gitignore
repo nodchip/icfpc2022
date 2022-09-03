@@ -50,10 +50,12 @@
 /vs/solver/*.user
 /vs/judge/x64
 /vs/judge/*.user
+/build
 
 # logs
 /src/*.log.*
 /vs/solver/*.log.*
+*.INFO
 
 # temporary files
 /scripts/solve_all.csv
@@ -80,3 +82,6 @@ __pycache__/
 /libs/mpir-windows/msvc/vs19/lib_mpir_gc/*.user
 /libs/mpir-windows/msvc/vs19/lib_mpir_gc/Win32
 /libs/mpir-windows/msvc/vs19/lib_mpir_gc/x64
+
+# VSCode
+.vscode
