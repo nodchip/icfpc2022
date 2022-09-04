@@ -69,6 +69,7 @@ int main(int argc, char* argv[]) {
   bool output_phase_isl = true;
   bool output_meta = true;
   bool output_image = true;
+  bool draw_border = true;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
@@ -177,7 +178,7 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
-      if (output_image) storeCanvasToFile(output_phase_file_path(0, ".png"), *cost->canvas);
+      if (output_image) storeCanvasToFile(output_phase_file_path(0, ".png"), *cost->canvas, draw_border);
     }
 
     SolverArguments arg(problem, initial_canvas, initial_canvas);
@@ -226,7 +227,7 @@ int main(int argc, char* argv[]) {
           dumpInstructions(file_path, header, out.solution);
           LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
         }
-        if (output_image) storeCanvasToFile(output_phase_file_path(phase, ".png"), *cost->canvas);
+        if (output_image) storeCanvasToFile(output_phase_file_path(phase, ".png"), *cost->canvas, draw_border);
       }
       last_canvas = cost->canvas;
 
@@ -237,7 +238,7 @@ int main(int argc, char* argv[]) {
     }
 
     dumpInstructions(output_solution_isl, header, out.solution);
-    if (output_image) storeCanvasToFile(output_file_path(".png"), *last_canvas);
+    if (output_image) storeCanvasToFile(output_file_path(".png"), *last_canvas, draw_border);
     LOG(INFO) << fmt::format("Dumped final {} instructions to : {}", out.solution.size(), output_solution_isl);
 
     return 0;

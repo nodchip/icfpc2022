@@ -2,7 +2,6 @@
 #include "painter.h"
 #include <array>
 #include <cassert>
-#include "lodepng.h"
 
 Frame Painter::draw(const Canvas& canvas, bool canvasOriginAtBottomLeftOfFrame) {
   const auto& blocks = canvas.simplify();
@@ -62,24 +61,6 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
   return result;
 }
 
-bool storeCanvasToFile(std::string file_path, const Canvas& canvas) {
-  Frame frame = Painter::draw(canvas, true);
-
-  const int W = canvas.width;
-  const int H = canvas.height;
-  std::vector<uint8_t> image(W * H * 4);
-  for (int y = 0; y < H; ++y) {
-    for (int x = 0; x < W; ++x) {
-      // RGBA
-      image[4 * (W * y + x) + 0] = frame[W * y + x][0];
-      image[4 * (W * y + x) + 1] = frame[W * y + x][1];
-      image[4 * (W * y + x) + 2] = frame[W * y + x][2];
-      image[4 * (W * y + x) + 3] = frame[W * y + x][3];
-    }
-  }
-
-  return lodepng::encode(file_path, image, W, H) == 0;
-}
 
 // 半開区間
 std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight) {
