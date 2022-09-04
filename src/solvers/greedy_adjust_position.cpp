@@ -36,6 +36,20 @@ public:
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ
     int best_cost = std::numeric_limits<int>::max();
     std::vector<std::shared_ptr<Instruction>> best_inst = ret.solution;
+    auto try_update = [&](const std::vector<std::shared_ptr<Instruction>>& work, const std::string& tag) {
+      std::optional<CostBreakdown> cost;
+      try { 
+        cost = computeCost(*args.painting, initial_canvas, work);
+      } catch (const InvalidInstructionException& e) {
+        return false;
+      }
+      if (cost && 0 < cost->total && cost->total < best_cost) {
+        if (verbose) LOG(INFO) << fmt::format("[{}] update cost {} -> {}", tag, best_cost, cost->total);
+        best_cost = cost->total;
+        best_inst = work;
+      }
+      return true;
+    };
     for (size_t iloop = 0; iloop < loop; ++iloop) {
       if (verbose) LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
       const int best_cost_at_the_beginning_of_loop = best_cost;
@@ -46,34 +60,14 @@ public:
           for (int d = -delta; d <= delta; ++d) {
             auto new_vcut = std::make_shared<VerticalCutInstruction>(vcut->block_id, vcut->lineNumber + d);
             work[i] = new_vcut;
-            std::optional<CostBreakdown> cost;
-            try { 
-              cost = computeCost(*args.painting, initial_canvas, work);
-            } catch (const InvalidInstructionException& e) {
-              continue;
-            }
-            if (cost && 0 < cost->total && cost->total < best_cost) {
-              if (verbose) LOG(INFO) << fmt::format("[V] update cost {} -> {}", best_cost, cost->total);
-              best_cost = cost->total;
-              best_inst = work;
-            }
+            if (!try_update(work, "V")) continue;
           }
           work[i] = vcut;
         } else if (auto hcut = std::dynamic_pointer_cast<HorizontalCutInstruction>(work[i])) {
           for (int d = -delta; d <= delta; ++d) {
             auto new_hcut = std::make_shared<HorizontalCutInstruction>(hcut->block_id, hcut->lineNumber + d);
             work[i] = new_hcut;
-            std::optional<CostBreakdown> cost;
-            try { 
-              cost = computeCost(*args.painting, initial_canvas, work);
-            } catch (const InvalidInstructionException& e) {
-              continue;
-            }
-            if (cost && 0 < cost->total && cost->total < best_cost) {
-              if (verbose) LOG(INFO) << fmt::format("[H] update cost {} -> {}", best_cost, cost->total);
-              best_cost = cost->total;
-              best_inst = work;
-            }
+            if (!try_update(work, "H")) continue;
           }
           work[i] = hcut;
         } else if (auto col = std::dynamic_pointer_cast<ColorInstruction>(work[i])) {
@@ -102,17 +96,7 @@ public:
               if (color) {
                 auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
                 work[i] = new_col;
-                std::optional<CostBreakdown> cost;
-                try { 
-                  cost = computeCost(*args.painting, initial_canvas, work);
-                } catch (const InvalidInstructionException& e) {
-                  // ignore
-                }
-                if (cost && 0 < cost->total && cost->total < best_cost) {
-                  if (verbose) LOG(INFO) << fmt::format("[C] update cost {} -> {}", best_cost, cost->total);
-                  best_cost = cost->total;
-                  best_inst = work;
-                }
+                try_update(work, "C");
                 work[i] = col;
               }
             }
