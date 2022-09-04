@@ -3,6 +3,7 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <regex>
 #include <omp.h>
 
 #include <CLI/CLI.hpp>
@@ -44,6 +45,58 @@ std::string getCommitId() {
     return commit_id;
   }
   return "NA";
+}
+
+std::optional<std::filesystem::path> guessProblemFile(std::string isl_file_path) {
+#ifdef _WIN32
+  // cwd is vs/x64/Release or vs/
+  std::vector<std::string> base_dir_candidates = {"..\\..\\..\\data\\problems", "..\\data\\problems"};
+#else
+  // cwd is src/
+  std::vector<std::string> base_dir_candidates = {"../data/problems"};
+#endif
+
+  auto find_pid_problem = [&](int pid) -> std::optional<std::filesystem::path> {
+    for (auto base_dir : base_dir_candidates) {
+      if (std::filesystem::exists(std::filesystem::path(base_dir) / fmt::format("{}.txt", pid))) {
+        return std::filesystem::path(base_dir) / fmt::format("{}.txt", pid);
+      }
+    }
+    return std::nullopt;
+  };
+
+  // 数字で始まる場合は, それがPID
+  try {
+    const int pid = std::stoi(std::filesystem::path(isl_file_path).filename().string());
+    if (auto path = find_pid_problem(pid)) {
+      LOG(INFO) << "Guessed problem file: " << path->string();
+      return *path;
+    }
+  } catch (const std::invalid_argument&) {
+  }
+
+  // 中身を見て以下のような行から探す
+  // # command line  : solver.exe solve Merge,RemoveMergedColor,IntervalDPSolverBorder,Greedy ..\..\..\data\problems\30.txt --greedy-adjust-position-color
+  {
+    std::ifstream ifs(isl_file_path);
+    std::string line;
+    std::regex re(R"(^# command line.*?(\d+)\.txt.*?)");
+    while (std::getline(ifs, line)) {
+      std::smatch m;
+      if (std::regex_match(line, m, re)) {
+        try {
+          const int pid = std::stoi(m[1].str());
+          if (auto path = find_pid_problem(pid)) {
+            LOG(INFO) << "Guessed problem file: " << path->string();
+            return *path;
+          }
+        } catch (const std::invalid_argument&) {
+        }
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 struct RecordCSV {
@@ -115,6 +168,10 @@ int main(int argc, char* argv[]) {
   auto sub_eval = app.add_subcommand("eval");
   sub_eval->add_option("problem_file", problem_file, "problem file path");
   sub_eval->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
+
+  auto sub_visualize = app.add_subcommand("visualize");
+  sub_visualize->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
+  sub_visualize->add_option("problem_file", problem_file, "problem file path");
 
   CLI11_PARSE(app, argc, argv);
   LOG(INFO) << "command line: " << getArgString(argc, argv);
@@ -298,6 +355,32 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
     LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
     LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+    return 0;
+  }
+
+  if (sub_visualize->parsed()) {
+    if (problem_file.empty()) {
+      if (auto guess = guessProblemFile(initial_solution_isl)) {
+        problem_file = guess->string();
+      } else {
+      LOG(ERROR) << fmt::format("failed to guess the problem file");
+        return -1;
+      }
+    }
+    std::shared_ptr<Painting> problem = loadProblem();
+    std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
+
+    SolverArguments arg(problem, initial_canvas, initial_canvas);
+    arg.optional_initial_solution = loadSolution(*problem);
+    arg.visualize = visualize;
+    if (timeout_s > 0) {
+      arg.timeout_s = timeout_s;
+    }
+
+    LOG(INFO) << "start visualizer..";
+    auto visualizer = SolverRegistry::getSolver("Visualizer");
+    visualizer->solve(arg);
+
     return 0;
   }
 
