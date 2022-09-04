@@ -1,3 +1,5 @@
+// added by sanma team
+#include "stdafx.h"
 /*
 LodePNG version 20220717
 

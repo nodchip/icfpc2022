@@ -96,7 +96,7 @@
     <ClCompile Include="..\..\src\solvers\merge_all.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\lodepng\lodepng.cpp">
+    <ClCompile Include="..\..\libs\lodepng\lodepng_win32.cpp">
       <Filter>lodepng</Filter>
     </ClCompile>
   </ItemGroup>

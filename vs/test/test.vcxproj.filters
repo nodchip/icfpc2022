@@ -87,7 +87,7 @@
     <ClCompile Include="..\..\src\tests\test_canvas.cpp">
       <Filter>ソース ファイル\tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\lodepng\lodepng.cpp">
+    <ClCompile Include="..\..\libs\lodepng\lodepng_win32.cpp">
       <Filter>lodepng</Filter>
     </ClCompile>
   </ItemGroup>
