@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fmt/format.h>
 #include "similarity_checker.h"
+#include "lodepng.h"
 
 Frame Painter::draw(const Canvas& canvas, bool canvasOriginAtBottomLeftOfFrame) {
   const auto& blocks = canvas.simplify();
@@ -48,8 +49,8 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
   std::ifstream ifs(file_path);
   if (ifs.bad() || ifs.eof()) return nullptr;
   ifs >> result->width >> result->height;
-  if (result->width < 0) return nullptr;
-  if (result->height < 0) return nullptr;
+  if (result->width <= 0) return nullptr;
+  if (result->height <= 0) return nullptr;
   result->frame.resize(result->width * result->height);
   for (int y = 0; y < result->height; ++y) {
     for (int x = 0; x < result->width; ++x) {
@@ -60,6 +61,32 @@ PaintingPtr loadPaintingFromFile(std::string file_path) {
   }
   if (ifs.bad()) return nullptr;
 
+  return result;
+}
+
+PaintingPtr loadPaintingFromPNGFile(std::string file_path) {
+  std::vector<uint8_t> buf;
+  unsigned int w = 0, h = 0;
+  if (lodepng::decode(buf, w, h, file_path) != 0) {
+    LOG(ERROR) << "failed to open PNG : " << file_path;
+    return nullptr;
+  }
+
+  auto result = std::make_shared<Painting>();
+  result->width = w;
+  result->height = h;
+  if (result->width <= 0) return nullptr;
+  if (result->height <= 0) return nullptr;
+  result->frame.resize(result->width * result->height);
+  for (int y = 0; y < result->height; ++y) {
+    for (int x = 0; x < result->width; ++x) {
+      (*result)(x, result->height - 1 - y) = RGBA(
+        buf[4 * (w * y + x) + 0],
+        buf[4 * (w * y + x) + 1],
+        buf[4 * (w * y + x) + 2],
+        buf[4 * (w * y + x) + 3]);
+    }
+  }
   return result;
 }
 

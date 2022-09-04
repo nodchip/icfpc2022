@@ -198,7 +198,13 @@ int main(int argc, char* argv[]) {
 
   auto loadInitialConfiguration = [&](PaintingPtr problem) {
     std::string config_path = problem_file;
-    config_path.replace(config_path.find(".txt"), 4, ".initial.json");
+    if (config_path.find(".txt") != std::string::npos) {
+      config_path.replace(config_path.find(".txt"), 4, ".initial.json");
+    } else if (config_path.find(".png") != std::string::npos) {
+      config_path.replace(config_path.find(".png"), 4, ".initial.json");
+    } else {
+      assert(false);
+    }
     std::shared_ptr<Canvas> canvas;
     if (std::filesystem::exists(config_path)) {
       canvas = loadCanvasFromJSONFile(config_path);
@@ -214,7 +220,9 @@ int main(int argc, char* argv[]) {
   };
 
   auto loadProblem = [&] {
-    std::shared_ptr<Painting> problem = loadPaintingFromFile(problem_file);
+    std::shared_ptr<Painting> problem = problem_file.ends_with(".png")
+      ? loadPaintingFromPNGFile(problem_file)
+      : loadPaintingFromFile(problem_file);
     if (!problem) {
       LOG(ERROR) << fmt::format("failed to load problem {}", problem_file);
       assert(false);

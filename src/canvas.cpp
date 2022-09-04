@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "canvas.h"
+#include <regex>
+#include <filesystem>
+#include <fmt/format.h>
 #include "painter.h"
 #include <nlohmann/json.hpp>
 #include <lodepng.h>
@@ -48,6 +51,17 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
     ifs >> jconfig;
   }
 
+  PaintingPtr source_painting;
+  if (jconfig.find("sourcePngPNG") != jconfig.end()) {
+    std::string sourcePngPNG = jconfig["sourcePngPNG"];
+    std::regex re(R"((\d+)\.source\.png)");
+    std::smatch m;
+    assert(std::regex_search(sourcePngPNG, m, re));
+    const int pid = std::stoi(m[1].str());
+    auto png_file_path = (std::filesystem::path(file_path).parent_path() / fmt::format("{}.png", pid)).string();
+    source_painting = loadPaintingFromPNGFile(png_file_path);
+  }
+
   const int width = jconfig["width"];
   const int height = jconfig["height"];
   auto result = std::make_shared<Canvas>(width, height, RGBA(0, 0, 0, 0));
@@ -70,11 +84,20 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
     } else {
       // full div.
       assert(jblock.find("pngBottomLeftPoint") != jblock.end());
+      assert(source_painting);
       const Point pngBottomLeftPoint(
         int(jblock["pngBottomLeftPoint"].at(0)), 
         int(jblock["pngBottomLeftPoint"].at(1)));
-      result->blocks[block_id] = std::make_shared<SimpleBlock>(block_id, bottomLeft, topRight, RGBA());
-      LOG(ERROR) << "!!! ignoring background png";
+
+      std::vector<std::shared_ptr<SimpleBlock>> sub_blocks;
+      const int skip = 1; // > 1 for debug.
+      for (int y = bottomLeft.py; y < topRight.py; y+=skip) {
+        for (int x = bottomLeft.px; x < topRight.px; x+=skip) {
+          const RGBA color = (*source_painting)(pngBottomLeftPoint.px + x - bottomLeft.px, pngBottomLeftPoint.py + y - bottomLeft.py);
+          sub_blocks.push_back(std::make_shared<SimpleBlock>(block_id, Point(x, y), Point(x + skip, y + skip), color));
+        }
+      }
+      result->blocks[block_id] = std::make_shared<ComplexBlock>(block_id, bottomLeft, topRight, sub_blocks);
     }
   }
 

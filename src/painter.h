@@ -27,6 +27,7 @@ struct Painting {
 using PaintingPtr = std::shared_ptr<Painting>;
 
 PaintingPtr loadPaintingFromFile(std::string file_path);
+PaintingPtr loadPaintingFromPNGFile(std::string file_path);
 
 // 半開区間
 std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight);
