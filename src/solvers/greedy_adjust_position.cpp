@@ -14,7 +14,7 @@ public:
     bool verbose = false;
     bool adjust_color = false; // あまり効かない(少なくともIntervalDPSolver3に対して)
     void setOptionParser(CLI::App* app) override {
-      app->add_option("--loop", loop);
+      app->add_option("--greedy-adjust-position-loop", loop);
       app->add_option("--greedy-adjust-position-delta", delta);
       app->add_flag("--greedy-adjust-position-verbose", verbose);
       app->add_flag("--greedy-adjust-position-color", adjust_color);
