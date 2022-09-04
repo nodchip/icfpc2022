@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\src\solvers\minimum_cost_maximum_flow.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\visualizer.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\solvers\beam_search_adjust_position.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>

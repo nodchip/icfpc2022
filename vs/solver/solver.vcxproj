@@ -72,6 +72,7 @@
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
+XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460d.* $(OutputPath)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -96,9 +97,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>274877906944</StackReserveSize>
+      <AdditionalDependencies>fmt.lib;glog.lib;opencv_world460.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glog.* $(OutputPath)
+XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(OutputPath)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -126,6 +129,7 @@
     <ClCompile Include="..\..\src\solvers\mean_color.cpp" />
     <ClCompile Include="..\..\src\solvers\merge_all.cpp" />
     <ClCompile Include="..\..\src\solvers\minimum_cost_maximum_flow.cpp" />
+    <ClCompile Include="..\..\src\solvers\visualizer.cpp" />
     <ClCompile Include="..\..\src\solver_registry.cpp" />
     <ClCompile Include="..\..\src\string_util.cpp" />
     <ClCompile Include="..\..\src\xorshift.cpp" />
