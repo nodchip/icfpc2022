@@ -66,6 +66,13 @@ Build Solution
 
 TODO(someone): Write this section.
 
+## Visualizer
+
+```
+./solver visualize ISL_FILE_PATH [PROBLEM_FILE_PATH]
+```
+if one omits PROBLEM_FILE_PATH, it will be guessed from ISL_FILE_PATH name and its content.
+
 ## Manual solver
 
 TODO(someone): Write this section.
