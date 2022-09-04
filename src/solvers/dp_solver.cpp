@@ -49,6 +49,7 @@ class DpSolver final : public SolverBase {
         const auto [color, distance] = GetBestColor(painting, x0, y0, x1, y1);
         color_instruction = std::make_shared<ColorInstruction>("", color);
         similarity_cost = distance * SimilarityChecker::alpha;
+        base_color = color;
         action_cost =
             std::round(ColorInstruction::kBaseCost * instruction_multiplier);
       } else {
@@ -164,7 +165,7 @@ class DpSolver final : public SolverBase {
     int y1 = -1;
     double instruction_multiplier;
     std::shared_ptr<ColorInstruction> color_instruction;
-    bool ch_color = false;
+    std::optional<RGBA> base_color;
     std::shared_ptr<Instruction> instruction;
     std::vector<const State*> children;
   };
@@ -252,26 +253,24 @@ class DpSolver final : public SolverBase {
                   is_cut = true;
                 }
               }
-              if (false && state0.color_instruction) {
+              if (state0.base_color) {
                 double cost = cut_cost + color_cost + state0.similarity_cost +
                               state1.cost;
                 if (cost < state.cost) {
-                  assert(!state0.ch_color);
                   state.cost = cost;
-                  state.color_instruction = state0.color_instruction;
-                  state.ch_color = true;
+                  state.color_instruction = std::make_shared<ColorInstruction>(
+                      "", *state0.base_color);
                   state.children = {nullptr, &state1};
                   is_cut = true;
                 }
               }
-              if (false && state1.color_instruction) {
+              if (state1.base_color) {
                 double cost = cut_cost + color_cost + state0.cost +
                               state1.similarity_cost;
                 if (cost < state.cost) {
-                  assert(!state1.ch_color);
                   state.cost = cost;
-                  state.color_instruction = state1.color_instruction;
-                  state.ch_color = true;
+                  state.color_instruction = std::make_shared<ColorInstruction>(
+                      "", *state1.base_color);
                   state.children = {&state0};
                   is_cut = true;
                 }
@@ -295,26 +294,24 @@ class DpSolver final : public SolverBase {
                   is_cut = true;
                 }
               }
-              if (false && state0.color_instruction) {
+              if (state0.base_color) {
                 double cost = cut_cost + color_cost + state0.similarity_cost +
                               state1.cost;
                 if (cost < state.cost) {
-                  assert(!state0.ch_color);
                   state.cost = cost;
-                  state.color_instruction = state0.color_instruction;
-                  state.ch_color = true;
+                  state.color_instruction = std::make_shared<ColorInstruction>(
+                      "", *state0.base_color);
                   state.children = {nullptr, &state1};
                   is_cut = true;
                 }
               }
-              if (false && state1.color_instruction) {
+              if (state1.base_color) {
                 double cost = cut_cost + color_cost + state0.cost +
                               state1.similarity_cost;
                 if (cost < state.cost) {
-                  assert(!state1.ch_color);
                   state.cost = cost;
-                  state.color_instruction = state1.color_instruction;
-                  state.ch_color = true;
+                  state.color_instruction = std::make_shared<ColorInstruction>(
+                      "", *state1.base_color);
                   state.children = {&state0};
                   is_cut = true;
                 }
