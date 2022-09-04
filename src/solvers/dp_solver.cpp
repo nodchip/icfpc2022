@@ -170,6 +170,8 @@ class DpSolver final : public SolverBase {
     std::vector<const State*> children;
   };
 
+  using States = std::vector<std::vector<std::vector<std::vector<State>>>>;
+
  public:
   struct Option : public OptionBase {
     int num_grids = kDefaultNumGrids;
@@ -202,34 +204,17 @@ class DpSolver final : public SolverBase {
       }
     }
 
-    assert(xs.size() == num_grids + 1);
-    assert(ys.size() == num_grids + 1);
-    auto states = CreateMultiDimVec<State>(num_grids, num_grids + 1, num_grids,
-                                           num_grids + 1, State());
+    const int num_xs = xs.size() - 1;
+    const int num_ys = ys.size() - 1;
+    auto states = CreateMultiDimVec<State>(num_ys, num_ys + 1, num_xs,
+                                           num_xs + 1, State());
+    InitializeStates(painting, xs, ys, states);
 
-    // Initialize with Color instruction.
-    LOG(INFO) << "Initialization starts";
-    for (int iy0 = 0; iy0 < ys.size(); ++iy0) {
-      const int y0 = ys[iy0];
-      for (int iy1 = iy0 + 1; iy1 < ys.size(); ++iy1) {
-        const int y1 = ys[iy1];
-        for (int ix0 = 0; ix0 < xs.size(); ++ix0) {
-          const int x0 = xs[ix0];
-          for (int ix1 = ix0 + 1; ix1 < xs.size(); ++ix1) {
-            const int x1 = xs[ix1];
-            auto& state = states[iy0][iy1][ix0][ix1];
-            state.InitWithColor(painting, x0, y0, x1, y1);
-          }
-        }
-      }
-    }
-    LOG(INFO) << "Initialization is done";
-
-    // DP search
-    for (int diy = 1; diy < ys.size(); ++diy) {
-      for (int dix = 1; dix < xs.size(); ++dix) {
-        for (int iy0 = 0; iy0 + diy < ys.size(); ++iy0) {
-          for (int ix0 = 0; ix0 + dix < xs.size(); ++ix0) {
+    LOG(INFO) << "DP search starts";
+    for (int diy = 1; diy <= num_ys; ++diy) {
+      for (int dix = 1; dix <= num_xs; ++dix) {
+        for (int iy0 = 0; iy0 + diy <= num_ys; ++iy0) {
+          for (int ix0 = 0; ix0 + dix <= num_xs; ++ix0) {
             const int iy1 = iy0 + diy;
             const int ix1 = ix0 + dix;
             auto& state = states[iy0][iy1][ix0][ix1];
@@ -238,89 +223,8 @@ class DpSolver final : public SolverBase {
                            state.instruction_multiplier);
             const double color_cost = std::round(ColorInstruction::kBaseCost *
                                                  state.instruction_multiplier);
-
-            // Try horizontal cut
-            for (int iy = iy0 + 1; iy < iy1; ++iy) {
-              auto&& state0 = states[iy0][iy][ix0][ix1];
-              auto&& state1 = states[iy][iy1][ix0][ix1];
-              bool is_cut = false;
-              {
-                double cost = cut_cost + state0.cost + state1.cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction.reset();
-                  state.children = {&state0, &state1};
-                  is_cut = true;
-                }
-              }
-              if (state0.base_color) {
-                double cost = cut_cost + color_cost + state0.similarity_cost +
-                              state1.cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction = std::make_shared<ColorInstruction>(
-                      "", *state0.base_color);
-                  state.children = {nullptr, &state1};
-                  is_cut = true;
-                }
-              }
-              if (state1.base_color) {
-                double cost = cut_cost + color_cost + state0.cost +
-                              state1.similarity_cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction = std::make_shared<ColorInstruction>(
-                      "", *state1.base_color);
-                  state.children = {&state0};
-                  is_cut = true;
-                }
-              }
-              if (is_cut) {
-                state.instruction =
-                    std::make_shared<HorizontalCutInstruction>("", ys[iy]);
-              }
-            }
-            // Try vertical cut
-            for (int ix = ix0 + 1; ix < ix1; ++ix) {
-              auto&& state0 = states[iy0][iy1][ix0][ix];
-              auto&& state1 = states[iy0][iy1][ix][ix1];
-              bool is_cut = false;
-              {
-                double cost = cut_cost + state0.cost + state1.cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction.reset();
-                  state.children = {&state0, &state1};
-                  is_cut = true;
-                }
-              }
-              if (state0.base_color) {
-                double cost = cut_cost + color_cost + state0.similarity_cost +
-                              state1.cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction = std::make_shared<ColorInstruction>(
-                      "", *state0.base_color);
-                  state.children = {nullptr, &state1};
-                  is_cut = true;
-                }
-              }
-              if (state1.base_color) {
-                double cost = cut_cost + color_cost + state0.cost +
-                              state1.similarity_cost;
-                if (cost < state.cost) {
-                  state.cost = cost;
-                  state.color_instruction = std::make_shared<ColorInstruction>(
-                      "", *state1.base_color);
-                  state.children = {&state0};
-                  is_cut = true;
-                }
-              }
-              if (is_cut) {
-                state.instruction =
-                    std::make_shared<VerticalCutInstruction>("", xs[ix]);
-              }
-            }
+            TryHorizontalCut(states, ix0, ix1, iy0, iy1, state);
+            TryVerticalCut(states, ix0, ix1, iy0, iy1, state);
             // TODO: Try point cut
           }
         }
@@ -339,6 +243,135 @@ class DpSolver final : public SolverBase {
         std::to_string(args.previous_canvas->calcTopLevelId());
     state.UpdateOutput(top_level_id, ret);
     return ret;
+  }
+
+ private:
+  void InitializeStates(const Painting& painting,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        States& states) {
+    LOG(INFO) << "Initialization starts";
+    for (int iy0 = 0; iy0 < ys.size() - 1; ++iy0) {
+      const int y0 = ys[iy0];
+      for (int iy1 = iy0 + 1; iy1 < ys.size(); ++iy1) {
+        const int y1 = ys[iy1];
+        for (int ix0 = 0; ix0 < xs.size() - 1; ++ix0) {
+          const int x0 = xs[ix0];
+          for (int ix1 = ix0 + 1; ix1 < xs.size(); ++ix1) {
+            const int x1 = xs[ix1];
+            auto& state = states[iy0][iy1][ix0][ix1];
+            state.InitWithColor(painting, x0, y0, x1, y1);
+          }
+        }
+      }
+    }
+    LOG(INFO) << "Initialization is done";
+  }
+
+  void TryHorizontalCut(const States& states,
+                        int ix0,
+                        int ix1,
+                        int iy0,
+                        int iy1,
+                        State& state) {
+    const double cut_cost = std::round(VerticalCutInstruction::kBaseCost *
+                                       state.instruction_multiplier);
+    const double color_cost =
+        std::round(ColorInstruction::kBaseCost * state.instruction_multiplier);
+
+    for (int iy = iy0 + 1; iy < iy1; ++iy) {
+      auto&& state0 = states[iy0][iy][ix0][ix1];
+      auto&& state1 = states[iy][iy1][ix0][ix1];
+      bool is_cut = false;
+      {
+        double cost = cut_cost + state0.cost + state1.cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction.reset();
+          state.children = {&state0, &state1};
+          is_cut = true;
+        }
+      }
+      if (state0.base_color) {
+        double cost =
+            cut_cost + color_cost + state0.similarity_cost + state1.cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction =
+              std::make_shared<ColorInstruction>("", *state0.base_color);
+          state.children = {nullptr, &state1};
+          is_cut = true;
+        }
+      }
+      if (state1.base_color) {
+        double cost =
+            cut_cost + color_cost + state0.cost + state1.similarity_cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction =
+              std::make_shared<ColorInstruction>("", *state1.base_color);
+          state.children = {&state0};
+          is_cut = true;
+        }
+      }
+      if (is_cut) {
+        state.instruction =
+            std::make_shared<HorizontalCutInstruction>("", state0.y1);
+      }
+    }
+  }
+
+  void TryVerticalCut(const States& states,
+                      int ix0,
+                      int ix1,
+                      int iy0,
+                      int iy1,
+                      State& state) {
+    const double cut_cost = std::round(VerticalCutInstruction::kBaseCost *
+                                       state.instruction_multiplier);
+    const double color_cost =
+        std::round(ColorInstruction::kBaseCost * state.instruction_multiplier);
+
+    for (int ix = ix0 + 1; ix < ix1; ++ix) {
+      auto&& state0 = states[iy0][iy1][ix0][ix];
+      auto&& state1 = states[iy0][iy1][ix][ix1];
+      bool is_cut = false;
+      {
+        double cost = cut_cost + state0.cost + state1.cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction.reset();
+          state.children = {&state0, &state1};
+          is_cut = true;
+        }
+      }
+      if (state0.base_color) {
+        double cost =
+            cut_cost + color_cost + state0.similarity_cost + state1.cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction =
+              std::make_shared<ColorInstruction>("", *state0.base_color);
+          state.children = {nullptr, &state1};
+          is_cut = true;
+        }
+      }
+      if (state1.base_color) {
+        double cost =
+            cut_cost + color_cost + state0.cost + state1.similarity_cost;
+        if (cost < state.cost) {
+          state.cost = cost;
+          state.color_instruction =
+              std::make_shared<ColorInstruction>("", *state1.base_color);
+          state.children = {&state0};
+          is_cut = true;
+        }
+      }
+      if (is_cut) {
+        state.instruction =
+            std::make_shared<VerticalCutInstruction>("", state0.x1);
+      }
+    }
   }
 };
 
