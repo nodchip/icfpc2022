@@ -183,9 +183,9 @@ struct EdgeDetect {
 };
 
 
-class BeamSearch : public SolverBase {
+class DebugEdgeDetect : public SolverBase {
 public:
-    BeamSearch() { }
+    DebugEdgeDetect() { }
     SolverOutputs solve(const SolverArguments& args) override {
         SolverOutputs ret;
         ret.solution = args.optional_initial_solution;
@@ -194,7 +194,7 @@ public:
         return ret;
     }
 };
-REGISTER_SOLVER("BeamSearch", BeamSearch);
+REGISTER_SOLVER("DebugEdgeDetect", DebugEdgeDetect);
 
 #if 1
 
