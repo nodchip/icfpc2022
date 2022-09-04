@@ -156,6 +156,7 @@ public:
 
     // 操作列を構築する
     SolverOutputs ret;
+    ret.solution = args.optional_initial_solution;
     const auto add_comment = [&](const std::string& comment) {
       ret.solution.push_back(std::make_shared<CommentInstruction>(comment));
     };
