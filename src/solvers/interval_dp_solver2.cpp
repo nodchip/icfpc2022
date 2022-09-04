@@ -59,7 +59,7 @@ public:
       for (int t = b + 1; t <= H; ++t) {
         for (int l = 0; l < W; ++l) {
           for (int r = l + 1; r <= W; ++r) {
-            colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), 10).value();
+            colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
             double cost = 0.0;
             for (int y = yticks[b]; y < yticks[t]; ++y) {
               for (int x = xticks[l]; x < xticks[r]; ++x) {

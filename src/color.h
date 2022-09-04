@@ -27,3 +27,11 @@ struct RGBA {
     return os;
   }
 };
+
+namespace std {
+  inline std::string to_string(const RGBA& x) {
+    std::ostringstream ss;
+    ss << x;
+    return ss.str();
+  }
+}

@@ -30,4 +30,7 @@ PaintingPtr loadPaintingFromFile(std::string file_path);
 
 // 半開区間
 std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point topRight);
-std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, int maxIter=100);
+// finalAdjustment = true
+//   roundは必ずしもスコアが最適ではないので、2^4=16パターンのうちコスト最小のものを選ぶ
+//   iter+=16する程度の計算コストが掛かる
+std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, bool finalAdjustment, int maxIter=100);

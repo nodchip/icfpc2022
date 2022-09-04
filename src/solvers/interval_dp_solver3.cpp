@@ -94,7 +94,8 @@ public:
           for (int r = l + 1; r <= W; ++r) {
             const double multiplier = 1.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l]));
             if (multiplier < prune_threshold) continue;  // 面積が大きい領域は、 geometricMedianColor() が重い && 単色でまとめて塗る可能性が低いので枝刈りする
-            colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), 10).value();
+
+            colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
             double cost = 0.0;
             for (int y = yticks[b]; y < yticks[t]; ++y) {
               for (int x = xticks[l]; x < xticks[r]; ++x) {

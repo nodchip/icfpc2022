@@ -85,7 +85,7 @@ public:
             auto iblock = canvas->blocks.find(col->block_id);
             if (iblock != canvas->blocks.end()) {
               auto block = iblock->second;
-              auto color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight);
+              auto color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight, true);
               if (color) {
                 auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
                 work[i] = new_col;
