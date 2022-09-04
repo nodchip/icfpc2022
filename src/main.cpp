@@ -153,6 +153,7 @@ int main(int argc, char* argv[]) {
   bool record_csv = true;
   bool output_image = true;
   bool draw_border = true;
+  bool print_instructions_with_operands = false;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
@@ -163,6 +164,7 @@ int main(int argc, char* argv[]) {
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
   sub_solve->add_flag("--record-csv,!--no-record-csv", record_csv, "create or append to record.csv");
   sub_solve->add_flag("--output-image,!--no-output-image", output_image, "output image file of intermediate/final canvas");
+  sub_solve->add_flag("--print-instructions-with-operands", print_instructions_with_operands, "print instructions with operands after execution");
   SolverRegistry::setOptionParser(sub_solve);
 
   auto sub_eval = app.add_subcommand("eval");
@@ -333,6 +335,26 @@ int main(int argc, char* argv[]) {
       arg.optional_initial_solution = out.solution;
       arg.previous_canvas = cost->canvas->Clone();
       ++phase;
+    }
+
+    if (print_instructions_with_operands) {
+      auto operands = std::make_shared<OperandMap>();
+      auto cost = computeCost(*problem, initial_canvas, out.solution, operands);
+      if (!cost) {
+        LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
+        return -1;
+      }
+      for (auto& inst : out.solution) {
+        std::ostringstream oss_input;
+        for (const auto& block : (*operands)[inst].input_blocks) {
+          oss_input << fmt::format("({},{})-({},{})", block->bottomLeft.px, block->bottomLeft.py, block->topRight.px, block->topRight.px) << " ";
+        }
+        std::ostringstream oss_output;
+        for (const auto& block : (*operands)[inst].output_blocks) {
+          oss_output << fmt::format("({},{})-({},{})", block->bottomLeft.px, block->bottomLeft.py, block->topRight.px, block->topRight.px) << " ";
+        }
+        LOG(INFO) << fmt::format("\"{}\" [{}]({} blocks) -> [{}]({} blocks)", inst->toString(), oss_input.str(), (*operands)[inst].input_blocks.size(), oss_output.str(), (*operands)[inst].output_blocks.size()); 
+      }
     }
 
     dumpInstructions(output_solution_isl, header, out.solution);

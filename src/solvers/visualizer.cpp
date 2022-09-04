@@ -90,7 +90,7 @@ struct SeekBarVisualizer {
 
   void read_instruction(const std::shared_ptr<Instruction>& inst) {
     auto canvas = canvas_list.back()->Clone();
-    interpreter.Interpret(canvas, inst);
+    interpreter.Interpret(canvas, nullptr, inst);
     instructions.push_back(inst);
     canvas_list.push_back(canvas);
     auto res = computeCost(*painting, canvas_list.front()->Clone(), instructions);

@@ -4,38 +4,38 @@
 #include <fmt/format.h>
 
 
-InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, int cost) : canvas(canvas), cost(cost) {}
+InterpreterResult::InterpreterResult(const std::shared_ptr<Canvas>& canvas, const std::shared_ptr<OperandMap>& operands, int cost) : canvas(canvas), operands(operands), cost(cost) {}
 
-std::shared_ptr<InterpreterResult> Interpreter::Run(CanvasPtr canvas, const std::vector<std::shared_ptr<Instruction>>& instructions)
+std::shared_ptr<InterpreterResult> Interpreter::Run(CanvasPtr canvas, const std::vector<std::shared_ptr<Instruction>>& instructions, std::shared_ptr<OperandMap> operands)
 {
   top_level_id_counter = canvas->calcTopLevelId();
   int totalCost = 0;
   for (const auto& inst : instructions) {
-    const auto result = Interpret(canvas, inst);
+    const auto result = Interpret(canvas, operands, inst);
     canvas = result->canvas;
     totalCost += result->cost;
   }
-  return std::make_shared<InterpreterResult>(canvas, totalCost);
+  return std::make_shared<InterpreterResult>(canvas, operands, totalCost);
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::Interpret(const std::shared_ptr<Canvas>& context, const std::shared_ptr<Instruction>& instruction) {
-  if (auto color_instruction = std::dynamic_pointer_cast<ColorInstruction>(instruction)) return ColorCanvas(context, color_instruction);
-  else if (auto point_cut_instruction = std::dynamic_pointer_cast<PointCutInstruction>(instruction)) return PointCutCanvas(context, point_cut_instruction);
-  else if (auto vertical_cut_instruction = std::dynamic_pointer_cast<VerticalCutInstruction>(instruction)) return VerticalCutCanvas(context, vertical_cut_instruction);
-  else if (auto horizontal_cut_instruction = std::dynamic_pointer_cast<HorizontalCutInstruction>(instruction)) return HorizontalCutCanvas(context, horizontal_cut_instruction);
-  else if (auto swap_instruction = std::dynamic_pointer_cast<SwapInstruction>(instruction)) return SwapCanvas(context, swap_instruction);
-  else if (auto merge_instruction = std::dynamic_pointer_cast<MergeInstruction>(instruction)) return MergeCanvas(context, merge_instruction);
+std::shared_ptr<InterpreterResult> Interpreter::Interpret(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap> operands, const std::shared_ptr<Instruction>& instruction) {
+  if (auto color_instruction = std::dynamic_pointer_cast<ColorInstruction>(instruction)) return ColorCanvas(context, operands, color_instruction);
+  else if (auto point_cut_instruction = std::dynamic_pointer_cast<PointCutInstruction>(instruction)) return PointCutCanvas(context, operands, point_cut_instruction);
+  else if (auto vertical_cut_instruction = std::dynamic_pointer_cast<VerticalCutInstruction>(instruction)) return VerticalCutCanvas(context, operands, vertical_cut_instruction);
+  else if (auto horizontal_cut_instruction = std::dynamic_pointer_cast<HorizontalCutInstruction>(instruction)) return HorizontalCutCanvas(context, operands, horizontal_cut_instruction);
+  else if (auto swap_instruction = std::dynamic_pointer_cast<SwapInstruction>(instruction)) return SwapCanvas(context, operands, swap_instruction);
+  else if (auto merge_instruction = std::dynamic_pointer_cast<MergeInstruction>(instruction)) return MergeCanvas(context, operands, merge_instruction);
   else if (auto nop_instruction = std::dynamic_pointer_cast<NopInstruction>(instruction)) {
-    return std::make_shared<InterpreterResult>(context, 0);
+    return std::make_shared<InterpreterResult>(context, operands, 0);
   }
   else if (auto comment_instruction = std::dynamic_pointer_cast<CommentInstruction>(instruction)) {
-    return std::make_shared<InterpreterResult>(context, 0);
+    return std::make_shared<InterpreterResult>(context, operands, 0);
   }
   else assert(false);
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<ColorInstruction>& color_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<ColorInstruction>& color_instruction) {
   // TypeCheck Starts
   const auto& [blockId, color] = *color_instruction;
   assert(context->blocks.count(blockId));
@@ -50,11 +50,18 @@ std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_pt
   );
   // Scoring Ends
 
+  if (operands) {
+    (*operands)[color_instruction] = {
+      { block },
+      { block },
+    };
+  }
+
   // Processing Starts
   if (block->typ == BlockType::SimpleBlockType) {
     const auto& actualBlock = std::dynamic_pointer_cast<SimpleBlock>(block);
     actualBlock->color = color;
-    return std::make_shared<InterpreterResult>(context, cost);
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   if (block->typ == BlockType::ComplexBlockType) {
@@ -65,14 +72,14 @@ std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_pt
       actualBlock->topRight,
       color
       );
-    return std::make_shared<InterpreterResult>(context, cost);
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
   // Processing Ends
   assert(false);
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<PointCutInstruction>& point_cut_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<PointCutInstruction>& point_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, point] = *point_cut_instruction;
   assert(context->blocks.count(blockId));
@@ -121,7 +128,15 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared
     context->blocks[blockId + ".1"] = bottomRightBlock;
     context->blocks[blockId + ".2"] = topRightBlock;
     context->blocks[blockId + ".3"] = topLeftBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[point_cut_instruction] = {
+        { block },
+        { bottomLeftBlock, bottomRightBlock, topRightBlock, topLeftBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   if (block->typ == BlockType::ComplexBlockType) {
@@ -293,14 +308,22 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared
     context->blocks[blockId + ".1"] = bottomRightBlock;
     context->blocks[blockId + ".2"] = topRightBlock;
     context->blocks[blockId + ".3"] = topLeftBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[point_cut_instruction] = {
+        { block },
+        { bottomLeftBlock, bottomRightBlock, topRightBlock, topLeftBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   assert(false);
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<VerticalCutInstruction>& vertical_cut_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<VerticalCutInstruction>& vertical_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, lineNumber] = *vertical_cut_instruction;
   assert(context->blocks.count(blockId));
@@ -334,7 +357,15 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::sha
     context->blocks.erase(blockId);
     context->blocks[blockId + ".0"] = leftBlock;
     context->blocks[blockId + ".1"] = rightBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[vertical_cut_instruction] = {
+        { block },
+        { leftBlock, rightBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   if (block->typ == BlockType::ComplexBlockType) {
@@ -377,7 +408,15 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::sha
       );
     context->blocks[blockId + ".0"] = leftBlock;
     context->blocks[blockId + ".1"] = rightBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[vertical_cut_instruction] = {
+        { block },
+        { leftBlock, rightBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
   // Processing Ends
 
@@ -385,7 +424,7 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::sha
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, lineNumber] = *horizontal_cut_instruction;
   assert(context->blocks.count(blockId));
@@ -419,7 +458,15 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::s
     context->blocks.erase(blockId);
     context->blocks[blockId + ".0"] = bottomBlock;
     context->blocks[blockId + ".1"] = topBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[horizontal_cut_instruction] = {
+        { block },
+        { bottomBlock, topBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   if (block->typ == BlockType::ComplexBlockType) {
@@ -463,7 +510,15 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::s
       );
     context->blocks[blockId + ".0"] = bottomBlock;
     context->blocks[blockId + ".1"] = topBlock;
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[horizontal_cut_instruction] = {
+        { block },
+        { bottomBlock, topBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
   // Processing Ends
 
@@ -471,7 +526,7 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::s
   return nullptr;
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<SwapInstruction>& swap_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<SwapInstruction>& swap_instruction) {
   // TypeCheck Starts
   const auto& [blockId1, blockId2] = *swap_instruction;
   assert(context->blocks.count(blockId1));
@@ -528,11 +583,18 @@ std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(const std::shared_ptr
   context->blocks[blockId1] = newBlock2;
   context->blocks[blockId2] = newBlock1;
 
-  return std::make_shared<InterpreterResult>(context, cost);
+  if (operands) {
+    (*operands)[swap_instruction] = {
+      { block1, block2 },
+      { newBlock1, newBlock2 },
+    };
+  }
+
+  return std::make_shared<InterpreterResult>(context, operands, cost);
   // Processing Ends
 }
 
-std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<MergeInstruction>& merge_instruction) {
+std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<MergeInstruction>& merge_instruction) {
   // TypeCheck Starts
   const auto& [blockId1, blockId2] = *merge_instruction;
   assert(context->blocks.count(blockId1));
@@ -576,7 +638,15 @@ std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_pt
     context->blocks[newBlock->id] = newBlock;
     context->blocks.erase(blockId1);
     context->blocks.erase(blockId2);
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[merge_instruction] = {
+        { block1, block2 },
+        { newBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   const auto leftToRight =
@@ -605,19 +675,27 @@ std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_pt
     context->blocks[newBlock->id] = newBlock;
     context->blocks.erase(blockId1);
     context->blocks.erase(blockId2);
-    return std::make_shared<InterpreterResult>(context, cost);
+
+    if (operands) {
+      (*operands)[merge_instruction] = {
+        { block1, block2 },
+        { newBlock },
+      };
+    }
+
+    return std::make_shared<InterpreterResult>(context, operands, cost);
   }
 
   assert(bottomToTop || leftToRight);
   return nullptr;
 }
 
-std::optional<CostBreakdown> computeCost(const Painting& problem, const CanvasPtr& initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+std::optional<CostBreakdown> computeCost(const Painting& problem, const CanvasPtr& initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions, std::shared_ptr<OperandMap> operands) {
 
   auto canvas = initial_canvas->Clone();
 
   Interpreter interpreter;
-  std::shared_ptr<InterpreterResult> interpreter_result = interpreter.Run(canvas, instructions);
+  std::shared_ptr<InterpreterResult> interpreter_result = interpreter.Run(canvas, instructions, operands);
   if (!interpreter_result) {
     LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
     return std::nullopt;
