@@ -74,7 +74,7 @@ auto CreateVector(std::size_t count, Args&&... args) {
 class IntervalDPSolverBorder : public SolverBase {
 public:
     struct Option : public OptionBase {
-        int num_intervals = 10;
+        int num_intervals = 40;
         double prune_threshold = 8.0;
         bool allow_point_cut = false;
         bool inherit_ticks = false;
@@ -130,7 +130,7 @@ public:
             xticks.insert(xticks.end(), xticks_set.begin(), xticks_set.end());
         }
         else {
-            auto edge = EdgeDetect(args.painting, args.painting->width / (num_intervals * 0.75), num_intervals * 0.75);
+            auto edge = EdgeDetect(args.painting, num_intervals / 0.75, (args.painting->height/num_intervals) * 0.75);
             xticks = edge.XTicks();
             yticks = edge.YTicks();
         }

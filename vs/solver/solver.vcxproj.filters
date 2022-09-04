@@ -108,7 +108,7 @@
     <ClCompile Include="..\..\src\solvers\beam_search_adjust_position.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\border_solver.cpp">
+    <ClCompile Include="..\..\src\interval_dp_solver_border.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\edge_detect.cpp">
