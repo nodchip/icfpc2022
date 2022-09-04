@@ -30,7 +30,7 @@ struct Canvas
 
 };
 
-CanvasPtr loadCanvasFromJSONFile(const std::string& file_path);
+CanvasPtr loadCanvasFromJSONFile(const std::string& file_path, bool eraseBackground);
 CanvasPtr createLightningCanvas(int width, int height);
 
 bool storeCanvasToFile(std::string file_path, const Canvas& canvas, bool drawBorder);

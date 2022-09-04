@@ -166,6 +166,7 @@ int main(int argc, char* argv[]) {
   bool record_csv = true;
   bool output_image = true;
   bool draw_border = true;
+  bool erase_background = false;
   bool print_instructions_with_operands = false;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
@@ -177,6 +178,7 @@ int main(int argc, char* argv[]) {
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
   sub_solve->add_flag("--record-csv,!--no-record-csv", record_csv, "create or append to record.csv");
   sub_solve->add_flag("--output-image,!--no-output-image", output_image, "output image file of intermediate/final canvas");
+  sub_solve->add_flag("--erase-background,!--no-erase-background", erase_background, "erase backgrounds found in pid=35~. HANDLE WITH CARE!");
   sub_solve->add_flag("--print-instructions-with-operands", print_instructions_with_operands, "print instructions with operands after execution");
   SolverRegistry::setOptionParser(sub_solve);
 
@@ -207,7 +209,7 @@ int main(int argc, char* argv[]) {
     }
     std::shared_ptr<Canvas> canvas;
     if (std::filesystem::exists(config_path)) {
-      canvas = loadCanvasFromJSONFile(config_path);
+      canvas = loadCanvasFromJSONFile(config_path, erase_background);
       if (!canvas) {
         LOG(ERROR) << fmt::format("failed to load config {}", config_path);
         assert(false);

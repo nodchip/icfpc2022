@@ -45,7 +45,7 @@ int Canvas::calcTopLevelId() const {
   return top_id;
 }
 
-CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
+CanvasPtr loadCanvasFromJSONFile(const std::string& file_path, bool eraseBackground) {
   nlohmann::json jconfig;
   {
     std::ifstream ifs(file_path);
@@ -89,21 +89,26 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
       result->blocks[block_id] = std::make_shared<SimpleBlock>(block_id, bottomLeft, topRight, color);
     } else {
       // full div.
-      assert(jblock.find("pngBottomLeftPoint") != jblock.end());
-      assert(source_painting);
-      const Point pngBottomLeftPoint(
-        int(jblock["pngBottomLeftPoint"].at(0)), 
-        int(jblock["pngBottomLeftPoint"].at(1)));
+      if (eraseBackground) {
+        LOG(INFO) << "erasing background.. this may lead to wrong score unless the entire region is color-ed.";
+        return createLightningCanvas(width, height);
+      } else {
+        assert(jblock.find("pngBottomLeftPoint") != jblock.end());
+        assert(source_painting);
+        const Point pngBottomLeftPoint(
+          int(jblock["pngBottomLeftPoint"].at(0)), 
+          int(jblock["pngBottomLeftPoint"].at(1)));
 
-      std::vector<std::shared_ptr<SimpleBlock>> sub_blocks;
-      const int skip = 1; // > 1 for debug.
-      for (int y = bottomLeft.py; y < topRight.py; y+=skip) {
-        for (int x = bottomLeft.px; x < topRight.px; x+=skip) {
-          const RGBA color = (*source_painting)(pngBottomLeftPoint.px + x - bottomLeft.px, pngBottomLeftPoint.py + y - bottomLeft.py);
-          sub_blocks.push_back(std::make_shared<SimpleBlock>(block_id, Point(x, y), Point(x + skip, y + skip), color));
+        std::vector<std::shared_ptr<SimpleBlock>> sub_blocks;
+        const int skip = 1; // > 1 for debug.
+        for (int y = bottomLeft.py; y < topRight.py; y+=skip) {
+          for (int x = bottomLeft.px; x < topRight.px; x+=skip) {
+            const RGBA color = (*source_painting)(pngBottomLeftPoint.px + x - bottomLeft.px, pngBottomLeftPoint.py + y - bottomLeft.py);
+            sub_blocks.push_back(std::make_shared<SimpleBlock>(block_id, Point(x, y), Point(x + skip, y + skip), color));
+          }
         }
+        result->blocks[block_id] = std::make_shared<ComplexBlock>(block_id, bottomLeft, topRight, sub_blocks);
       }
-      result->blocks[block_id] = std::make_shared<ComplexBlock>(block_id, bottomLeft, topRight, sub_blocks);
     }
   }
 
