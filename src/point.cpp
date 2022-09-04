@@ -41,3 +41,7 @@ bool Point::operator!=(const Point& rh) const
 {
   return !(*this == rh);
 }
+
+std::string Point::str() const {
+    return '[' + std::to_string(px) + ", " + std::to_string(py) + ']';
+}

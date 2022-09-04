@@ -26,4 +26,6 @@ struct Point
   bool operator==(const Point& rh) const;
 
   bool operator!=(const Point& rh) const;
+
+  std::string str() const;
 };

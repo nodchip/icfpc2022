@@ -60,6 +60,9 @@ struct MouseParams {
 
 struct SeekBarVisualizer {
 
+  static constexpr int mag = 2;
+  static constexpr int info_height = 200;
+
   std::string winname = "img";
 
   Interpreter interpreter;
@@ -73,12 +76,11 @@ struct SeekBarVisualizer {
   int frame_id = 0;
   int alpha = 0;
   bool draw_border_flag = true;
+  bool heatmap_flag = false;
   cv::Mat_<cv::Vec4b> img;
   MouseParamsPtr mp;
 
-  SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas, bool draw_border = true)
-    : painting(painting)
-  {
+  SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas) : painting(painting) {
     mp = std::make_shared<MouseParams>();
     interpreter.top_level_id_counter = initial_canvas->calcTopLevelId();
     instructions.push_back(std::make_shared<NopInstruction>());
@@ -98,30 +100,49 @@ struct SeekBarVisualizer {
     sim_cost_list.push_back(res->similarity);
   }
 
+  Point get_mouse_position() const {
+    return { mp->x / mag, painting->height - (mp->y - info_height) / mag };
+  }
+
   cv::Mat_<cv::Vec4b> create_board_image() {
 
-    const int pixel = 2;
     const int W = painting->width;
     const int H = painting->height;
 
     auto canvas = canvas_list[frame_id];
 
-    std::vector<uint8_t> arr(W * pixel * H * pixel * 4);
-    {
-      const auto& pframe = painting->frame;
-      auto cframe = Painter::draw(*canvas, false);
+    std::vector<uint8_t> arr(W * mag * H * mag * 4, 255);
+    const auto& pframe = painting->frame;
+    auto cframe = Painter::draw(*canvas, false);
+    if (heatmap_flag) {
+      for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+          // 差が大きいなら BG を弱くする
+          for (int i = 0; i < mag; ++i) {
+            for (int j = 0; j < mag; ++j) {
+              int diff = 0;
+              for (int c = 0; c < 4; c++) diff += std::abs((int)pframe[W * y + x][c] - (int)cframe[W * y + x][c]);
+              uint8_t val = 255 - diff / 4;
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 0] = val;
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 1] = val;
+            }
+          }
+        }
+      }
+    }
+    else {
       for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
           // BGRA
-          for (int i = 0; i < pixel; ++i) {
-            for (int j = 0; j < pixel; ++j) {
-              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 0]
+          for (int i = 0; i < mag; ++i) {
+            for (int j = 0; j < mag; ++j) {
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 0]
                 = ((int)pframe[W * y + x][2] * alpha + (int)cframe[W * y + x][2] * (255 - alpha)) / 255;
-              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 1]
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 1]
                 = ((int)pframe[W * y + x][1] * alpha + (int)cframe[W * y + x][1] * (255 - alpha)) / 255;
-              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 2]
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 2]
                 = ((int)pframe[W * y + x][0] * alpha + (int)cframe[W * y + x][0] * (255 - alpha)) / 255;
-              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 3]
+              arr[4 * (W * mag * (y * mag + i) + (x * mag + j)) + 3]
                 = ((int)pframe[W * y + x][3] * alpha + (int)cframe[W * y + x][3] * (255 - alpha)) / 255;
             }
           }
@@ -130,49 +151,57 @@ struct SeekBarVisualizer {
     }
 
     if (draw_border_flag) {
-      const RGBA border_color{ 0, 255, 0, 255 };
+      const RGBA border_default_color{ 0, 255, 0, 255 };
+      const RGBA border_emphasis_color{ 255, 0, 0, 255 };
       for (const auto& [block_id, block] : canvas->blocks) {
         assert(block);
+        bool on_block = get_mouse_position().isStrictlyInside(block->bottomLeft, block->topRight);
+        auto border_color = on_block ? border_emphasis_color : border_default_color;
+
         // i* は画像座標
         std::vector<std::tuple<int, int>> border_pixels;
-        int ixs[2] = {
-          block->bottomLeft.px * pixel,
-          block->topRight.px * pixel - 1,
+        int ixs[4] = {
+          block->bottomLeft.px * mag,
+          block->topRight.px * mag - 1,
+          block->bottomLeft.px * mag + on_block,
+          block->topRight.px * mag - 1 - on_block
         };
-        for (int iy = block->bottomLeft.py * pixel; iy < block->topRight.py * pixel; ++iy) {
+        for (int iy = block->bottomLeft.py * mag; iy < block->topRight.py * mag; ++iy) {
           for (auto ix : ixs) {
             border_pixels.emplace_back(ix, iy);
           }
         }
-        int iys[2] = {
-          block->bottomLeft.py * pixel,
-          block->topRight.py * pixel - 1,
+        int iys[4] = {
+          block->bottomLeft.py * mag,
+          block->topRight.py * mag - 1,
+          block->bottomLeft.py * mag + on_block,
+          block->topRight.py * mag - 1 - on_block
         };
-        for (int ix = block->bottomLeft.px * pixel; ix < block->topRight.px * pixel; ++ix) {
+        for (int ix = block->bottomLeft.px * mag; ix < block->topRight.px * mag; ++ix) {
           for (auto iy : iys) {
             border_pixels.emplace_back(ix, iy);
           }
         }
         for (auto [ix, iy] : border_pixels) {
-          arr[4 * (W * pixel * iy + ix) + 0] = border_color[0];
-          arr[4 * (W * pixel * iy + ix) + 1] = border_color[1];
-          arr[4 * (W * pixel * iy + ix) + 2] = border_color[2];
-          arr[4 * (W * pixel * iy + ix) + 3] = border_color[3];
+          arr[4 * (W * mag * iy + ix) + 0] = border_color[2];
+          arr[4 * (W * mag * iy + ix) + 1] = border_color[1];
+          arr[4 * (W * mag * iy + ix) + 2] = border_color[0];
+          arr[4 * (W * mag * iy + ix) + 3] = border_color[3];
         }
       }
     }
 
     // flip.
-    for (int iy = 0; iy < H * pixel / 2; ++iy) {
-      uint8_t* src_line = &arr[4 * W * pixel * iy];
-      uint8_t* dst_line = &arr[4 * W * pixel * (H * pixel - 1 - iy)];
-      for (int b = 0; b < 4 * W * pixel; ++b) {
+    for (int iy = 0; iy < H * mag / 2; ++iy) {
+      uint8_t* src_line = &arr[4 * W * mag * iy];
+      uint8_t* dst_line = &arr[4 * W * mag * (H * mag - 1 - iy)];
+      for (int b = 0; b < 4 * W * mag; ++b) {
         std::swap(src_line[b], dst_line[b]);
       }
     }
 
-    cv::Mat_<cv::Vec4b> img(H * pixel, W * pixel);
-    std::memcpy(img.ptr(), arr.data(), sizeof(uint8_t) * 4 * H * pixel * W * pixel);
+    cv::Mat_<cv::Vec4b> img(H * mag, W * mag);
+    std::memcpy(img.ptr(), arr.data(), sizeof(uint8_t) * 4 * H * mag * W * mag);
 
     return img;
 
@@ -180,7 +209,6 @@ struct SeekBarVisualizer {
 
   cv::Mat_<cv::Vec4b> create_info_image() {
     const int width = painting->width * 2;
-    const int height = 200;
     std::vector<std::string> msgs;
     msgs.push_back(fmt::format("command: {}", instructions[frame_id]->toString()));
     msgs.push_back(fmt::format(" inst cost: {}", inst_cost_list[frame_id]));
@@ -188,8 +216,11 @@ struct SeekBarVisualizer {
     msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
     msgs.push_back("");
     msgs.push_back(mp->str());
-    msgs.push_back(fmt::format("border(b): {}", draw_border_flag ? "on" : "off"));
-    cv::Mat_<cv::Vec4b> img_info(height, width, cv::Vec4b(200, 200, 200, 255));
+    msgs.push_back(fmt::format("border(b): {}, heatmap(h): {}",
+      draw_border_flag ? "on" : "off",
+      heatmap_flag ? "on" : "off"
+      ));
+    cv::Mat_<cv::Vec4b> img_info(info_height, width, cv::Vec4b(200, 200, 200, 255));
     for (int i = 0; i < msgs.size(); i++) {
       cv::putText(img_info, msgs[i], cv::Point(5, (i + 1) * 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0, 0), 1, cv::LINE_AA);
     }
@@ -234,6 +265,7 @@ struct SeekBarVisualizer {
     while (true) {
       int c = cv::waitKey(15);
       if (c == 'b') draw_border_flag = !draw_border_flag;
+      if (c == 'h') heatmap_flag = !heatmap_flag;
       if (c == 27) break;
       img = create_image();
       cv::imshow(winname, img);
