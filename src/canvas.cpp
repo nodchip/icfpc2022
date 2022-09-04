@@ -59,12 +59,23 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
     const Point topRight(
       int(jblock["topRight"].at(0)), 
       int(jblock["topRight"].at(1)));
-    const Color color(
-      int(jblock["color"].at(0)),
-      int(jblock["color"].at(1)),
-      int(jblock["color"].at(2)),
-      int(jblock["color"].at(3)));
-    result->blocks[block_id] = std::make_shared<SimpleBlock>(block_id, bottomLeft, topRight, color);
+    if (jblock.find("color") != jblock.end()) {
+      // lightning
+      const Color color(
+        int(jblock["color"].at(0)),
+        int(jblock["color"].at(1)),
+        int(jblock["color"].at(2)),
+        int(jblock["color"].at(3)));
+      result->blocks[block_id] = std::make_shared<SimpleBlock>(block_id, bottomLeft, topRight, color);
+    } else {
+      // full div.
+      assert(jblock.find("pngBottomLeftPoint") != jblock.end());
+      const Point pngBottomLeftPoint(
+        int(jblock["pngBottomLeftPoint"].at(0)), 
+        int(jblock["pngBottomLeftPoint"].at(1)));
+      result->blocks[block_id] = std::make_shared<SimpleBlock>(block_id, bottomLeft, topRight, RGBA());
+      LOG(ERROR) << "!!! ignoring background png";
+    }
   }
 
   return result;
