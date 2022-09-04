@@ -166,8 +166,8 @@ int main(int argc, char* argv[]) {
   SolverRegistry::setOptionParser(sub_solve);
 
   auto sub_eval = app.add_subcommand("eval");
-  sub_eval->add_option("problem_file", problem_file, "problem file path");
   sub_eval->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
+  sub_eval->add_option("problem_file", problem_file, "problem file path");
 
   auto sub_visualize = app.add_subcommand("visualize");
   sub_visualize->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
@@ -343,6 +343,14 @@ int main(int argc, char* argv[]) {
   }
 
   if (sub_eval->parsed()) {
+    if (problem_file.empty()) {
+      if (auto guess = guessProblemFile(initial_solution_isl)) {
+        problem_file = guess->string();
+      } else {
+      LOG(ERROR) << fmt::format("failed to guess the problem file");
+        return -1;
+      }
+    }
     std::shared_ptr<Painting> problem = loadProblem();
 
     std::vector<std::shared_ptr<Instruction>> solution = loadSolution(*problem);
