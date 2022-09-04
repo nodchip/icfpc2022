@@ -41,52 +41,115 @@ class DpSolver final : public SolverBase {
       this->y0 = y0;
       this->x1 = x1;
       this->y1 = y1;
-
-      auto color =
-          geometricMedianColor(painting, Point(x0, y0), Point(x1, y1), 10)
-              .value();
-      instruction = std::make_shared<ColorInstruction>("", color);
-
-      similarity_cost = 0;
-      for (int y = y0; y < y1; ++y) {
-        for (int x = x0; x < x1; ++x) {
-          similarity_cost +=
-              SimilarityChecker::pixelDiff(color, painting(x, y));
-        }
-      }
-      similarity_cost *= SimilarityChecker::alpha;
-
-      const double area = (y1 - y0) * (x1 - x0);
+      const int area = (y1 - y0) * (x1 - x0);
       instruction_multiplier = 1.0 * painting.width * painting.height / area;
 
-      double action_cost = ColorInstruction::kBaseCost * instruction_multiplier;
+      double action_cost = 0;
+      if (area <= 10000) {
+        const auto [color, distance] = GetBestColor(painting, x0, y0, x1, y1);
+        color_instruction = std::make_shared<ColorInstruction>("", color);
+        similarity_cost = distance * SimilarityChecker::alpha;
+        action_cost =
+            std::round(ColorInstruction::kBaseCost * instruction_multiplier);
+      } else {
+        similarity_cost = 1e+20;
+      }
+
       cost = similarity_cost + action_cost;
     }
 
     void UpdateOutput(const std::string& block_id,
                       SolverOutputs& output) const {
-      assert(instruction);
-      switch (instruction->getBaseCost()) {
-        case ColorInstruction::kBaseCost:
-          std::dynamic_pointer_cast<ColorInstruction>(instruction)->block_id =
-              block_id;
-          break;
-        case VerticalCutInstruction::kBaseCost:
-          if (auto p = std::dynamic_pointer_cast<VerticalCutInstruction>(
-                  instruction)) {
-            p->block_id = block_id;
-          } else {
-            std::dynamic_pointer_cast<HorizontalCutInstruction>(instruction)
-                ->block_id = block_id;
-          }
-          break;
+      assert(instruction || color_instruction);
+      if (color_instruction) {
+        color_instruction->block_id = block_id;
+        output.solution.push_back(color_instruction);
       }
-      output.solution.push_back(instruction);
+
+      if (instruction) {
+        if (auto p = std::dynamic_pointer_cast<VerticalCutInstruction>(
+                instruction)) {
+          p->block_id = block_id;
+        } else {
+          std::dynamic_pointer_cast<HorizontalCutInstruction>(instruction)
+              ->block_id = block_id;
+        }
+        output.solution.push_back(instruction);
+      }
 
       for (int i = 0; i < children.size(); ++i) {
+        if (!children[i]) {
+          continue;
+        }
         std::string block(fmt::format("{}.{}", block_id, i));
         children[i]->UpdateOutput(block, output);
       }
+    }
+
+    static std::tuple<RGBA, double> GetBestColor(const Painting& painting,
+                                                 const int x0,
+                                                 const int y0,
+                                                 const int x1,
+                                                 const int y1,
+                                                 const int num_iteration = 10) {
+      const size_t n = (y1 - y0) * (x1 - x0);
+
+      std::vector<RGBA> colors;
+      colors.reserve(n);
+      for (int y = y0; y < y1; ++y) {
+        for (int x = x0; x < x1; ++x) {
+          colors.push_back(painting(x, y));
+        }
+      }
+
+      std::array<double, 4> estimate{0, 0, 0, 0};
+      for (auto&& c : colors) {
+        estimate[0] += c[0];
+        estimate[1] += c[1];
+        estimate[2] += c[2];
+        estimate[3] += c[3];
+      }
+      for (int i = 0; i < 4; ++i) {
+        estimate[i] = int(estimate[i] / colors.size());
+      }
+
+      std::vector<double> weights(n);
+      for (int iter = 0; iter < num_iteration; ++iter) {
+        for (size_t i = 0; i < n; ++i) {
+          double d0 = colors[i][0] - estimate[0];
+          double d1 = colors[i][1] - estimate[1];
+          double d2 = colors[i][2] - estimate[2];
+          double d3 = colors[i][3] - estimate[3];
+          weights[i] =
+              1.0 / (std::sqrt(d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3) + 1e-6);
+        }
+
+        estimate = {0.0, 0.0, 0.0, 0.0};
+        double sum = 0;
+        for (size_t i = 0; i < n; ++i) {
+          estimate[0] += colors[i][0] * weights[i];
+          estimate[1] += colors[i][1] * weights[i];
+          estimate[2] += colors[i][2] * weights[i];
+          estimate[3] += colors[i][3] * weights[i];
+          sum += weights[i];
+        }
+        estimate[0] /= sum;
+        estimate[1] /= sum;
+        estimate[2] /= sum;
+        estimate[3] /= sum;
+      }
+
+      // Compute sum of distance
+      double diff = 0;
+      for (auto&& color : colors) {
+        double d0 = color[0] - estimate[0];
+        double d1 = color[1] - estimate[1];
+        double d2 = color[2] - estimate[2];
+        double d3 = color[3] - estimate[3];
+        diff += std::sqrt(d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3);
+      }
+
+      return {RGBA(estimate[0], estimate[1], estimate[2], estimate[3]), diff};
     }
 
     double cost = 1e+20;
@@ -96,7 +159,8 @@ class DpSolver final : public SolverBase {
     int x1 = -1;
     int y1 = -1;
     double instruction_multiplier;
-    // TODO: Use enum or other imm values.
+    std::shared_ptr<ColorInstruction> color_instruction;
+    bool ch_color = false;
     std::shared_ptr<Instruction> instruction;
     std::vector<const State*> children;
   };
@@ -118,6 +182,7 @@ class DpSolver final : public SolverBase {
     const Painting& painting = *args.painting;
     assert(painting.width % num_grids == 0);
     assert(painting.height % num_grids == 0);
+    LOG(INFO) << "# of grids: " << num_grids;
 
     // Make a list of Xs and Ys for grids.
     // TODO: Make this list dynamically.
@@ -138,6 +203,7 @@ class DpSolver final : public SolverBase {
                                            num_grids + 1, State());
 
     // Initialize with Color instruction.
+    LOG(INFO) << "Initialization starts";
     for (int iy0 = 0; iy0 < ys.size(); ++iy0) {
       const int y0 = ys[iy0];
       for (int iy1 = iy0 + 1; iy1 < ys.size(); ++iy1) {
@@ -152,6 +218,7 @@ class DpSolver final : public SolverBase {
         }
       }
     }
+    LOG(INFO) << "Initialization is done";
 
     // DP search
     for (int diy = 1; diy < ys.size(); ++diy) {
@@ -161,53 +228,96 @@ class DpSolver final : public SolverBase {
             const int iy1 = iy0 + diy;
             const int ix1 = ix0 + dix;
             auto& state = states[iy0][iy1][ix0][ix1];
-            const double cut_cost = VerticalCutInstruction::kBaseCost *
-                                    state.instruction_multiplier;
-            const double color_cost =
-                ColorInstruction::kBaseCost * state.instruction_multiplier;
+            const double cut_cost =
+                std::round(VerticalCutInstruction::kBaseCost *
+                           state.instruction_multiplier);
+            const double color_cost = std::round(ColorInstruction::kBaseCost *
+                                                 state.instruction_multiplier);
 
             // Try horizontal cut
             for (int iy = iy0 + 1; iy < iy1; ++iy) {
               auto&& state0 = states[iy0][iy][ix0][ix1];
               auto&& state1 = states[iy][iy1][ix0][ix1];
-              double min_cost = state.cost;
-              min_cost =
-                  std::min(min_cost, cut_cost + state0.cost + state1.cost);
-              min_cost =
-                  std::min(min_cost, cut_cost + color_cost +
-                                         state0.similarity_cost + state1.cost);
-              min_cost =
-                  std::min(min_cost, cut_cost + color_cost + state0.cost +
-                                         state1.similarity_cost);
-              if (min_cost < state.cost) {
-                state.cost = min_cost;
+              bool is_cut = false;
+              {
+                double cost = cut_cost + state0.cost + state1.cost;
+                if (cost < state.cost) {
+                  state.cost = cost;
+                  state.color_instruction.reset();
+                  state.children = {&state0, &state1};
+                  is_cut = true;
+                }
+              }
+              if (false && state0.color_instruction) {
+                double cost = cut_cost + color_cost + state0.similarity_cost +
+                              state1.cost;
+                if (cost < state.cost) {
+                  assert(!state0.ch_color);
+                  state.cost = cost;
+                  state.color_instruction = state0.color_instruction;
+                  state.ch_color = true;
+                  state.children = {nullptr, &state1};
+                  is_cut = true;
+                }
+              }
+              if (false && state1.color_instruction) {
+                double cost = cut_cost + color_cost + state0.cost +
+                              state1.similarity_cost;
+                if (cost < state.cost) {
+                  assert(!state1.ch_color);
+                  state.cost = cost;
+                  state.color_instruction = state1.color_instruction;
+                  state.ch_color = true;
+                  state.children = {&state0};
+                  is_cut = true;
+                }
+              }
+              if (is_cut) {
                 state.instruction =
                     std::make_shared<HorizontalCutInstruction>("", ys[iy]);
-                state.children.clear();
-                state.children.push_back(&state0);
-                state.children.push_back(&state1);
               }
             }
             // Try vertical cut
             for (int ix = ix0 + 1; ix < ix1; ++ix) {
               auto&& state0 = states[iy0][iy1][ix0][ix];
               auto&& state1 = states[iy0][iy1][ix][ix1];
-              double min_cost = state.cost;
-              min_cost =
-                  std::min(min_cost, cut_cost + state0.cost + state1.cost);
-              min_cost =
-                  std::min(min_cost, cut_cost + color_cost +
-                                         state0.similarity_cost + state1.cost);
-              min_cost =
-                  std::min(min_cost, cut_cost + color_cost + state0.cost +
-                                         state1.similarity_cost);
-              if (min_cost < state.cost) {
-                state.cost = min_cost;
+              bool is_cut = false;
+              {
+                double cost = cut_cost + state0.cost + state1.cost;
+                if (cost < state.cost) {
+                  state.cost = cost;
+                  state.color_instruction.reset();
+                  state.children = {&state0, &state1};
+                  is_cut = true;
+                }
+              }
+              if (false && state0.color_instruction) {
+                double cost = cut_cost + color_cost + state0.similarity_cost +
+                              state1.cost;
+                if (cost < state.cost) {
+                  assert(!state0.ch_color);
+                  state.cost = cost;
+                  state.color_instruction = state0.color_instruction;
+                  state.ch_color = true;
+                  state.children = {nullptr, &state1};
+                  is_cut = true;
+                }
+              }
+              if (false && state1.color_instruction) {
+                double cost = cut_cost + color_cost + state0.cost +
+                              state1.similarity_cost;
+                if (cost < state.cost) {
+                  assert(!state1.ch_color);
+                  state.cost = cost;
+                  state.color_instruction = state1.color_instruction;
+                  state.ch_color = true;
+                  state.children = {&state0};
+                  is_cut = true;
+                }
+              }
+              if (is_cut) {
                 state.instruction =
                     std::make_shared<VerticalCutInstruction>("", xs[ix]);
-                state.children.clear();
-                state.children.push_back(&state0);
-                state.children.push_back(&state1);
               }
             }
             // TODO: Try point cut
@@ -215,6 +325,7 @@ class DpSolver final : public SolverBase {
         }
       }
     }
+    LOG(INFO) << "DP finishes";
 
     SolverOutputs ret;
     auto&& state = states[0][ys.size() - 1][0][xs.size() - 1];
