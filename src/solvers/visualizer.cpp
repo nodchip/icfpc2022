@@ -62,8 +62,6 @@ struct SeekBarVisualizer {
 
   std::string winname = "img";
 
-  bool draw_border;
-
   Interpreter interpreter;
   PaintingPtr painting;
 
@@ -73,11 +71,13 @@ struct SeekBarVisualizer {
   std::vector<double> sim_cost_list;
 
   int frame_id = 0;
+  int alpha = 0;
+  bool draw_border_flag = true;
   cv::Mat_<cv::Vec4b> img;
   MouseParamsPtr mp;
 
   SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas, bool draw_border = true)
-    : painting(painting), draw_border(draw_border)
+    : painting(painting)
   {
     mp = std::make_shared<MouseParams>();
     interpreter.top_level_id_counter = initial_canvas->calcTopLevelId();
@@ -100,29 +100,36 @@ struct SeekBarVisualizer {
 
   cv::Mat_<cv::Vec4b> create_board_image() {
 
-    const auto& canvas = canvas_list[frame_id];
+    const int pixel = 2;
+    const int W = painting->width;
+    const int H = painting->height;
 
-    Frame frame = Painter::draw(*canvas, false);
+    auto canvas = canvas_list[frame_id];
 
-    const int pixel = draw_border ? 2 : 1;
-    const int W = canvas->width;
-    const int H = canvas->height;
-    std::vector<uint8_t> image(W * pixel * H * pixel * 4);
-    for (int y = 0; y < H; ++y) {
-      for (int x = 0; x < W; ++x) {
-        // BGRA
-        for (int i = 0; i < pixel; ++i) {
-          for (int j = 0; j < pixel; ++j) {
-            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 0] = frame[W * y + x][2];
-            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 1] = frame[W * y + x][1];
-            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 2] = frame[W * y + x][0];
-            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 3] = frame[W * y + x][3];
+    std::vector<uint8_t> arr(W * pixel * H * pixel * 4);
+    {
+      const auto& pframe = painting->frame;
+      auto cframe = Painter::draw(*canvas, false);
+      for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+          // BGRA
+          for (int i = 0; i < pixel; ++i) {
+            for (int j = 0; j < pixel; ++j) {
+              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 0]
+                = ((int)pframe[W * y + x][2] * alpha + (int)cframe[W * y + x][2] * (255 - alpha)) / 255;
+              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 1]
+                = ((int)pframe[W * y + x][1] * alpha + (int)cframe[W * y + x][1] * (255 - alpha)) / 255;
+              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 2]
+                = ((int)pframe[W * y + x][0] * alpha + (int)cframe[W * y + x][0] * (255 - alpha)) / 255;
+              arr[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 3]
+                = ((int)pframe[W * y + x][3] * alpha + (int)cframe[W * y + x][3] * (255 - alpha)) / 255;
+            }
           }
         }
       }
     }
 
-    if (draw_border) {
+    if (draw_border_flag) {
       const RGBA border_color{ 0, 255, 0, 255 };
       for (const auto& [block_id, block] : canvas->blocks) {
         assert(block);
@@ -147,31 +154,32 @@ struct SeekBarVisualizer {
           }
         }
         for (auto [ix, iy] : border_pixels) {
-          image[4 * (W * pixel * iy + ix) + 0] = border_color[0];
-          image[4 * (W * pixel * iy + ix) + 1] = border_color[1];
-          image[4 * (W * pixel * iy + ix) + 2] = border_color[2];
-          image[4 * (W * pixel * iy + ix) + 3] = border_color[3];
+          arr[4 * (W * pixel * iy + ix) + 0] = border_color[0];
+          arr[4 * (W * pixel * iy + ix) + 1] = border_color[1];
+          arr[4 * (W * pixel * iy + ix) + 2] = border_color[2];
+          arr[4 * (W * pixel * iy + ix) + 3] = border_color[3];
         }
       }
     }
 
     // flip.
     for (int iy = 0; iy < H * pixel / 2; ++iy) {
-      uint8_t* src_line = &image[4 * W * pixel * iy];
-      uint8_t* dst_line = &image[4 * W * pixel * (H * pixel - 1 - iy)];
+      uint8_t* src_line = &arr[4 * W * pixel * iy];
+      uint8_t* dst_line = &arr[4 * W * pixel * (H * pixel - 1 - iy)];
       for (int b = 0; b < 4 * W * pixel; ++b) {
         std::swap(src_line[b], dst_line[b]);
       }
     }
 
-    cv::Mat_<cv::Vec4b> image_cv(H * pixel, W * pixel);
-    std::memcpy(image_cv.ptr(), image.data(), sizeof(uint8_t) * 4 * H * pixel * W * pixel);
+    cv::Mat_<cv::Vec4b> img(H * pixel, W * pixel);
+    std::memcpy(img.ptr(), arr.data(), sizeof(uint8_t) * 4 * H * pixel * W * pixel);
 
-    return image_cv;
+    return img;
+
   }
 
   cv::Mat_<cv::Vec4b> create_info_image() {
-    const int width = painting->width * (draw_border ? 2 : 1);
+    const int width = painting->width * 2;
     const int height = 200;
     std::vector<std::string> msgs;
     msgs.push_back(fmt::format("command: {}", instructions[frame_id]->toString()));
@@ -180,6 +188,7 @@ struct SeekBarVisualizer {
     msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
     msgs.push_back("");
     msgs.push_back(mp->str());
+    msgs.push_back(fmt::format("border(b): {}", draw_border_flag ? "on" : "off"));
     cv::Mat_<cv::Vec4b> img_info(height, width, cv::Vec4b(200, 200, 200, 255));
     for (int i = 0; i < msgs.size(); i++) {
       cv::putText(img_info, msgs[i], cv::Point(5, (i + 1) * 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0, 0), 1, cv::LINE_AA);
@@ -207,15 +216,24 @@ struct SeekBarVisualizer {
   }
 
   void vis() {
+
     cv::namedWindow(winname, cv::WINDOW_AUTOSIZE);
     img = create_image();
     cv::imshow(winname, img);
+
     cv::createTrackbar("frame id", winname, &frame_id, canvas_list.size() - 1, frame_callback, this);
     cv::setTrackbarPos("frame id", winname, 0);
     cv::setTrackbarMin("frame id", winname, 0);
+
+    cv::createTrackbar("alpha", winname, &alpha, 255, alpha_callback, this);
+    cv::setTrackbarPos("alpha", winname, 0);
+    cv::setTrackbarMin("alpha", winname, 0);
+
     cv::setMouseCallback(winname, mouse_callback, this);
+
     while (true) {
       int c = cv::waitKey(15);
+      if (c == 'b') draw_border_flag = !draw_border_flag;
       if (c == 27) break;
       img = create_image();
       cv::imshow(winname, img);
@@ -225,6 +243,11 @@ struct SeekBarVisualizer {
   static void frame_callback(int id, void* param) {
     auto vis = static_cast<SeekBarVisualizer*>(param);
     vis->frame_id = id;
+  }
+
+  static void alpha_callback(int val, void* param) {
+    auto vis = static_cast<SeekBarVisualizer*>(param);
+    vis->alpha = val;
   }
 
   static void mouse_callback(int e, int x, int y, int f, void* param) {
