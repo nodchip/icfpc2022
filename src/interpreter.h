@@ -26,10 +26,9 @@ struct Interpreter
 
   std::shared_ptr<InterpreterResult> Run(CanvasPtr canvas, const std::vector<std::shared_ptr<Instruction>>& instructions);
 
-private:
-
-  // TODO: 後で .cpp に移動
   std::shared_ptr<InterpreterResult> Interpret(const std::shared_ptr<Canvas>& context, const std::shared_ptr<Instruction>& instruction);
+
+private:
 
   std::shared_ptr<InterpreterResult> ColorCanvas(const std::shared_ptr<Canvas>& context, const std::shared_ptr<ColorInstruction>& color_instruction);
 
