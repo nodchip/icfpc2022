@@ -112,6 +112,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(O
     <ClCompile Include="..\..\src\border_solver.cpp" />
     <ClCompile Include="..\..\src\canvas.cpp" />
     <ClCompile Include="..\..\src\color.cpp" />
+    <ClCompile Include="..\..\src\edge_detect.cpp" />
     <ClCompile Include="..\..\src\instruction.cpp" />
     <ClCompile Include="..\..\src\instruction_cost_calculator.cpp" />
     <ClCompile Include="..\..\src\interpreter.cpp" />
@@ -149,6 +150,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(O
     <ClInclude Include="..\..\src\block.h" />
     <ClInclude Include="..\..\src\canvas.h" />
     <ClInclude Include="..\..\src\color.h" />
+    <ClInclude Include="..\..\src\edge_detect.h" />
     <ClInclude Include="..\..\src\instruction.h" />
     <ClInclude Include="..\..\src\instruction_cost_calculator.h" />
     <ClInclude Include="..\..\src\interpreter.h" />
