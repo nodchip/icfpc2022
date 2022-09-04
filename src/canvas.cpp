@@ -3,9 +3,10 @@
 #include <regex>
 #include <filesystem>
 #include <fmt/format.h>
-#include "painter.h"
 #include <nlohmann/json.hpp>
 #include <lodepng.h>
+#include "painter.h"
+#include "instruction.h"
 
 Canvas::Canvas(int width, int height, const Color& backgroundColor)
     : width(width), height(height), backgroundColor(backgroundColor)
@@ -60,7 +61,12 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
     const int pid = std::stoi(m[1].str());
     auto png_file_path = (std::filesystem::path(file_path).parent_path() / fmt::format("{}.png", pid)).string();
     source_painting = loadPaintingFromPNGFile(png_file_path);
+
+    globallySetInstructionCost(true);
+  } else {
+    globallySetInstructionCost(false);
   }
+
 
   const int width = jconfig["width"];
   const int height = jconfig["height"];

@@ -4,6 +4,33 @@
 #include <fstream>
 #include <fmt/core.h>
 
+int ColorInstruction::kBaseCost = 5;
+int PointCutInstruction::kBaseCost = 10;
+int VerticalCutInstruction::kBaseCost = 7;
+int HorizontalCutInstruction::kBaseCost = 7;
+int SwapInstruction::kBaseCost = 3;
+int MergeInstruction::kBaseCost = 1;
+
+void globallySetInstructionCost(bool hasBackground) {
+  if (hasBackground) {
+    LOG(INFO) << "using with-background table";
+    ColorInstruction::kBaseCost = 5;
+    PointCutInstruction::kBaseCost = 3;
+    VerticalCutInstruction::kBaseCost = 2;
+    HorizontalCutInstruction::kBaseCost = 2;
+    SwapInstruction::kBaseCost = 3;
+    MergeInstruction::kBaseCost = 1;
+  } else {
+    LOG(INFO) << "using no-background table";
+    ColorInstruction::kBaseCost = 5;
+    PointCutInstruction::kBaseCost = 10;
+    VerticalCutInstruction::kBaseCost = 7;
+    HorizontalCutInstruction::kBaseCost = 7;
+    SwapInstruction::kBaseCost = 3;
+    MergeInstruction::kBaseCost = 1;
+  }
+}
+
 std::string Instruction::toString() const {
   return "INVALID";
 }
