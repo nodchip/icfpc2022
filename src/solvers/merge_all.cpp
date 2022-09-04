@@ -7,6 +7,14 @@
 
 class MergeAll : public SolverBase {
 public:
+  struct Option : public OptionBase {
+    bool emit_color = false;
+    void setOptionParser(CLI::App* app) override {
+      app->add_flag("--merge-all-emit-color", emit_color);
+    }
+  };
+  virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
+
   MergeAll() { }
   SolverOutputs solve(const SolverArguments &args) override {
 
@@ -45,7 +53,10 @@ public:
         instructions.push_back(inst);
         dst_id = ++top_id;
       }
-      instructions.push_back(std::make_shared<ColorInstruction>(std::to_string(top_id), RGBA(255, 255, 255, 255)));
+      if (getOption<Option>()->emit_color) {
+        LOG(INFO) << "emit_color";
+        instructions.push_back(std::make_shared<ColorInstruction>(std::to_string(top_id), RGBA(255, 255, 255, 255)));
+      }
     }
 
     ret.solution = instructions;
@@ -53,7 +64,7 @@ public:
 
   }
 };
-REGISTER_SOLVER("MergeAll", MergeAll);
+REGISTER_SOLVER_WITH_OPTION("MergeAll", MergeAll, MergeAll::Option);
 
 // 細かいものを併合していく。コスト的にMergeAllよりも不利。
 // pid=32でinst cost Pyramid:43695 Merge:13641
