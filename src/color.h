@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
 
 struct RGBA {
   union {
@@ -27,3 +28,11 @@ struct RGBA {
     return os;
   }
 };
+
+namespace std {
+  inline std::string to_string(const RGBA& x) {
+    std::ostringstream ss;
+    ss << x;
+    return ss.str();
+  }
+}

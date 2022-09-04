@@ -45,6 +45,34 @@ std::string getCommitId() {
   return "NA";
 }
 
+struct RecordCSV {
+  const bool create;
+  std::ofstream ofs;
+  int pid = 0;
+  RecordCSV(std::string problem_file)
+    : create(!std::filesystem::exists("record.csv"))
+    , ofs("record.csv", std::ios::app) {
+    if (create) {
+      ofs << "problem,solver_name,elapsed_s,instruction_cost,similarity_cost,total_cost,..." << std::endl;
+    }
+    try {
+      pid = std::stoi(std::filesystem::path(problem_file).filename().string());
+    } catch (const std::invalid_argument&) {
+    }
+    ofs << pid << ", ";
+  }
+  ~RecordCSV() {
+    ofs << std::endl;
+  }
+  void append_phase(std::string solver_name, double elapsed_s, int inst_cost, int sim_cost, int total_cost) {
+    ofs << solver_name << ", ";
+    ofs << elapsed_s << ", ";
+    ofs << inst_cost << ", ";
+    ofs << sim_cost << ", ";
+    ofs << total_cost << ", ";
+  }
+};
+
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -68,6 +96,7 @@ int main(int argc, char* argv[]) {
   bool visualize = false;
   bool output_phase_isl = true;
   bool output_meta = true;
+  bool record_csv = true;
   bool output_image = true;
   bool draw_border = true;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
@@ -78,6 +107,7 @@ int main(int argc, char* argv[]) {
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
   sub_solve->add_flag("--output-phase,!--no-output-phase", output_phase_isl, "output phase ISL files (outfile.1.isl, outfile.2.isl, ..)");
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
+  sub_solve->add_flag("--record-csv,!--no-record-csv", record_csv, "create or append to record.csv");
   sub_solve->add_flag("--output-image,!--no-output-image", output_image, "output image file of intermediate/final canvas");
   SolverRegistry::setOptionParser(sub_solve);
 
@@ -160,6 +190,9 @@ int main(int argc, char* argv[]) {
       return -1;
     }
 
+    std::shared_ptr<RecordCSV> csv;
+    if (record_csv) csv = std::make_shared<RecordCSV>(problem_file);
+
     std::shared_ptr<Painting> problem = loadProblem();
     std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
     std::vector<std::shared_ptr<Instruction>> header = {
@@ -215,6 +248,7 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+      if (csv) csv->append_phase(solver_name, solve_s, cost->instruction, cost->similarity, cost->total);
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Solver     : {}", solver_name)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total)));

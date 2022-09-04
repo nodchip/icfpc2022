@@ -2,6 +2,8 @@
 #include "painter.h"
 #include <array>
 #include <cassert>
+#include <fmt/format.h>
+#include "similarity_checker.h"
 
 Frame Painter::draw(const Canvas& canvas, bool canvasOriginAtBottomLeftOfFrame) {
   const auto& blocks = canvas.simplify();
@@ -80,7 +82,7 @@ std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point 
   return std::nullopt;
 }
 
-std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, int maxIter) {
+std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, bool finalAdjustment, int maxIter) {
   std::array<double, 4> estimate;
   auto mean = meanColor(painting, bottomLeft, topRight);
   if (!mean) return std::nullopt;
@@ -126,5 +128,41 @@ std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomL
     }
     estimate = weighted_average(estimate, weights);
   }
-  return RGBA(int(std::round(estimate[0])), int(std::round(estimate[1])), int(std::round(estimate[2])), int(std::round(estimate[3])));
+
+  const RGBA round_color(int(std::round(estimate[0])), int(std::round(estimate[1])), int(std::round(estimate[2])), int(std::round(estimate[3])));
+  if (finalAdjustment) {
+    const RGBA corner(int(std::floor(estimate[0])), int(std::floor(estimate[1])), int(std::floor(estimate[2])), int(std::floor(estimate[3])));
+    RGBA best_color = corner;
+    int best_score = std::numeric_limits<int>::max();
+    auto calc_score = [&](RGBA color) {
+      double dscore = 0;
+      for (int y = bottomLeft.py; y < topRight.py; ++y) {
+        for (int x = bottomLeft.px; x < topRight.px; ++x) {
+          dscore += SimilarityChecker::pixelDiff(color, painting(x, y));
+        }
+      }
+      constexpr double alpha = 0.005;
+      const int score = std::round(alpha * dscore);
+      return score;
+    };
+    for (int i = 0; i < 16; ++i) {
+      const RGBA candidate(
+        std::clamp(corner[0] + i % 2    , 0, 255),
+        std::clamp(corner[1] + i / 2 % 2, 0, 255),
+        std::clamp(corner[2] + i / 4 % 2, 0, 255),
+        std::clamp(corner[3] + i / 8 % 2, 0, 255));
+      const int score = calc_score(candidate);
+      if (score < best_score) {
+        best_score = score;
+        best_color = candidate;
+      }
+    }
+    assert (best_score <= calc_score(round_color));
+    if (false && best_score < calc_score(round_color)) { // 煩雑すぎるのでオフ
+      LOG(INFO) << fmt::format("improvement {}({}) -> {}({})", std::to_string(round_color), calc_score(round_color), std::to_string(best_color), best_score);
+    }
+    return best_color;
+  } else {
+    return round_color;
+  }
 }

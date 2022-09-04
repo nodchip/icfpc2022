@@ -12,7 +12,7 @@ public:
 
     // 平均色を吐く
     auto mean_color = *meanColor(*args.painting, Point(0, 0), Point(args.painting->width, args.painting->height));
-    auto color = *geometricMedianColor(*args.painting, Point(0, 0), Point(args.painting->width, args.painting->height));
+    auto color = *geometricMedianColor(*args.painting, Point(0, 0), Point(args.painting->width, args.painting->height), true);
     LOG(INFO) << "mean color = " << mean_color;
     LOG(INFO) << "median color = " << color;
     ret.solution.push_back(std::make_shared<ColorInstruction>("0", color));

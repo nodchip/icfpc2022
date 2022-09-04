@@ -42,7 +42,7 @@ public:
     for (const auto& [block_id, block] : executed->canvas->blocks) {
       if (block->typ == SimpleBlockType) {
         auto color = getOption<Option>()->use_median
-          ? geometricMedianColor(*args.painting, block->bottomLeft, block->topRight)
+          ? geometricMedianColor(*args.painting, block->bottomLeft, block->topRight, true)
           : meanColor(*args.painting, block->bottomLeft, block->topRight);
         assert(color);
         ret.solution.push_back(std::make_shared<ColorInstruction>(block->id, *color));

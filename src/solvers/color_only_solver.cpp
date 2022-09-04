@@ -12,7 +12,7 @@ public:
     SolverOutputs ret;
     for (const auto& [id, block] : args.previous_canvas->blocks) {
       const Color current_color = std::dynamic_pointer_cast<SimpleBlock>(block)->color;
-      const Color best_color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight).value();
+      const Color best_color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight, true).value();
       const ColorInstruction instruction(id, best_color);
       double delta_cost = getCost(instruction, block->size.getScalarSize(), args.previous_canvas->size().getScalarSize());
       for (int y = block->bottomLeft.py; y < block->topRight.py; ++y) {

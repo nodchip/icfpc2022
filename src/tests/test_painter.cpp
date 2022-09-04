@@ -25,15 +25,19 @@ TEST(TestPainter, geometricMedianColorSimple) {
   painting.width = 2;
   painting.height = 2;
   painting.frame = {
-    RGBA(128, 128, 128, 128),
-    RGBA(128, 128, 128, 128),
-    RGBA(64, 64, 64, 64),
-    RGBA(64, 64, 64, 64),
+    RGBA(3, 3, 3, 3),
+    RGBA(3, 3, 3, 3),
+    RGBA(1, 1, 1, 1),
+    RGBA(1, 1, 1, 1),
   };
-  auto color = geometricMedianColor(painting, Point(0, 0), Point(2, 2));
-  LOG(INFO) << *color;
+  auto color = geometricMedianColor(painting, Point(0, 0), Point(2, 2), false);
   ASSERT_TRUE(color);
-  EXPECT_EQ(*color, RGBA(96, 96, 96, 96));
+  LOG(INFO) << *color;
+  auto color_adjust = geometricMedianColor(painting, Point(0, 0), Point(2, 2), true);
+  ASSERT_TRUE(color_adjust);
+  LOG(INFO) << *color_adjust;
+  EXPECT_EQ(*color, RGBA(2, 2, 2, 2));
+  EXPECT_EQ(*color_adjust, RGBA(2, 2, 2, 2));
 }
 
 TEST(TestPainter, geometricMedianColorBetterThanMean) {
@@ -42,7 +46,7 @@ TEST(TestPainter, geometricMedianColorBetterThanMean) {
   EXPECT_EQ(painting->width, 400);
   EXPECT_EQ(painting->height, 400);
   auto mean_color = meanColor(*painting, Point(0, 0), Point(200, 200));
-  auto median_color = geometricMedianColor(*painting, Point(0, 0), Point(200, 200));
+  auto median_color = geometricMedianColor(*painting, Point(0, 0), Point(200, 200), true);
   Painting mean_painting = *painting;
   mean_painting.frame.assign(mean_painting.frame.size(), *mean_color);
   Painting median_painting = *painting;
