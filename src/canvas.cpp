@@ -59,7 +59,7 @@ CanvasPtr loadCanvasFromJSONFile(const std::string& file_path) {
     std::smatch m;
     assert(std::regex_search(sourcePngPNG, m, re));
     const int pid = std::stoi(m[1].str());
-    auto png_file_path = (std::filesystem::path(file_path).parent_path() / fmt::format("{}.png", pid)).string();
+    auto png_file_path = (std::filesystem::path(file_path).parent_path() / fmt::format("{}.source.png", pid)).string();
     source_painting = loadPaintingFromPNGFile(png_file_path);
 
     globallySetInstructionCost(true);
