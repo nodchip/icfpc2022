@@ -29,6 +29,8 @@ def main():
                         help='Interval DP2 num intervals.')
     parser.add_argument('--interval_dp_3_num_intervals', type=int,
                         help='Interval DP3 num intervals.')
+    parser.add_argument('--loop', type=int,
+                        help='Greedy num loops.')
 
     args = parser.parse_args()
 
@@ -46,6 +48,7 @@ def main():
                 'INTERNAL_DP_NUM_INTERVALS': str(args.interval_dp_num_intervals),
                 'INTERNAL_DP_2_NUM_INTERVALS': str(args.interval_dp_2_num_intervals),
                 'INTERNAL_DP_3_NUM_INTERVALS': str(args.interval_dp_3_num_intervals),
+                'LOOP': str(args.loop),
                 'PROBLEM_NUMBER': str(problem_number),
                 'SOLVER_NAME': str(args.solver_name),
             }
