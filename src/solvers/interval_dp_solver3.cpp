@@ -96,33 +96,38 @@ public:
 
 #pragma omp parallel num_threads(num_threads) if(num_threads > 1)
     {
+      // 元のループは:
+      //for (int b = 0; b < H; ++b) 
+      //  for (int t = b + 1; t <= H; ++t) 
+      //    for (int l = 0; l < W; ++l) 
+      //      for (int r = l + 1; r <= W; ++r) 
 #pragma omp for schedule(dynamic)
-    for (int btlr = 0; btlr < H * (H + 1) * W * (W + 1); ++btlr) {
-      const int b = btlr / (W + 1) / W / (H + 1);
-      const int t = btlr / (W + 1) / W % (H + 1);
-      const int l = btlr / (W + 1) % W; 
-      const int r = btlr % (W + 1); 
-      if (b + 1 <= t && t <= H && l + 1 <= r && r <= W) {
-        const double multiplier = 1.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l]));
-        if (multiplier < prune_threshold) continue;  // 面積が大きい領域は、 geometricMedianColor() が重い && 単色でまとめて塗る可能性が低いので枝刈りする
+      for (int btlr = 0; btlr < H * (H + 1) * W * (W + 1); ++btlr) {
+        const int b = btlr / (W + 1) / W / (H + 1);
+        const int t = btlr / (W + 1) / W % (H + 1);
+        const int l = btlr / (W + 1) % W; 
+        const int r = btlr % (W + 1); 
+        if (b + 1 <= t && t <= H && l + 1 <= r && r <= W) {
+          const double multiplier = 1.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l]));
+          if (multiplier < prune_threshold) continue;  // 面積が大きい領域は、 geometricMedianColor() が重い && 単色でまとめて塗る可能性が低いので枝刈りする
 
-        colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
-        double cost = 0.0;
-        for (int y = yticks[b]; y < yticks[t]; ++y) {
-          for (int x = xticks[l]; x < xticks[r]; ++x) {
-            double distance2 = 0.0;
-            for (int c = 0; c < 4; ++c) {
-              const int diff = get_value(y, x, c) - colors[b][t][l][r][c];
-              distance2 += diff * diff;
+          colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
+          double cost = 0.0;
+          for (int y = yticks[b]; y < yticks[t]; ++y) {
+            for (int x = xticks[l]; x < xticks[r]; ++x) {
+              double distance2 = 0.0;
+              for (int c = 0; c < 4; ++c) {
+                const int diff = get_value(y, x, c) - colors[b][t][l][r][c];
+                distance2 += diff * diff;
+              }
+              cost += std::sqrt(distance2);
             }
-            cost += std::sqrt(distance2);
           }
+          similarity_costs[b][t][l][r] = kAlpha * cost;
+          color_costs[b][t][l][r] = kAlpha * cost;
+          color_costs[b][t][l][r] += std::round(5.0 * multiplier);
         }
-        similarity_costs[b][t][l][r] = kAlpha * cost;
-        color_costs[b][t][l][r] = kAlpha * cost;
-        color_costs[b][t][l][r] += std::round(5.0 * multiplier);
       }
-    }
     }
 
     // Line cut move で分割する手順を区間 DP で求める
