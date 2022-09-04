@@ -27,6 +27,8 @@ public:
 
   IntervalDPSolver3() { }
   SolverOutputs solve(const SolverArguments &args) override {
+    const auto top_level_id = std::to_string(args.canvas->calcTopLevelId());
+    assert(args.canvas->blocks[top_level_id]->size == args.canvas->size());
     const int num_intervals = getOption<Option>()->num_intervals;
     const double prune_threshold = getOption<Option>()->prune_threshold;
     LOG(INFO) << "num_intervals = " << num_intervals;
@@ -160,7 +162,7 @@ public:
     add_comment(fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W]))));
     add_comment(fmt::format("num_intervals = {0}", num_intervals));
     std::vector<std::tuple<int, int, int, int, std::string>> stack;
-    stack.emplace_back(0, H, 0, W, "0");
+    stack.emplace_back(0, H, 0, W, top_level_id);
     while (!stack.empty()) {
       const auto [b, t, l, r, name] = stack.back();
       stack.pop_back();
