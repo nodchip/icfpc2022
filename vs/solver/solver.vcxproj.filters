@@ -99,6 +99,9 @@
     <ClCompile Include="..\..\libs\lodepng\lodepng_win32.cpp">
       <Filter>lodepng</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\minimum_cost_maximum_flow.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
