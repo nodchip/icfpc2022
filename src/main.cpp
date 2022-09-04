@@ -26,6 +26,25 @@ std::vector<std::string> split(std::string s, char delim) {
   return result;
 }
 
+std::string getArgString(int argc, char* argv[]) {
+  std::ostringstream oss;
+  for (int i = 0; i < argc; ++i) {
+    oss << argv[i];
+    if (i + 1 < argc) oss << " ";
+  }
+  return oss.str();
+}
+
+std::string getCommitId() {
+  if(system("git rev-parse HEAD > HEAD.txt") == 0) {
+    std::string commit_id;
+    std::ifstream ifs("HEAD.txt");
+    ifs >> commit_id;
+    return commit_id;
+  }
+  return "NA";
+}
+
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -123,6 +142,10 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<Painting> problem = loadProblem();
     std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
+    std::vector<std::shared_ptr<Instruction>> header = {
+      std::make_shared<CommentInstruction>(fmt::format("command line  : {}", getArgString(argc, argv))),
+      std::make_shared<CommentInstruction>(fmt::format("git commit id : {}", getCommitId())),
+    };
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
     if (!initial_solution.empty()) {
       auto cost = computeCost(*problem, initial_canvas, initial_solution);
@@ -185,7 +208,7 @@ int main(int argc, char* argv[]) {
 
       if (output_phase_isl && phase < solver_name_list.size()) {
         auto file_path = output_phase_file_path(phase);
-        dumpInstructions(file_path, out.solution);
+        dumpInstructions(file_path, header, out.solution);
         LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
       }
 
@@ -195,7 +218,7 @@ int main(int argc, char* argv[]) {
       ++phase;
     }
 
-    dumpInstructions(output_solution_isl, out.solution);
+    dumpInstructions(output_solution_isl, header, out.solution);
     LOG(INFO) << fmt::format("Dumped final {} instructions to : {}", out.solution.size(), output_solution_isl);
 
     return 0;

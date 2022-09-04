@@ -40,8 +40,12 @@ std::string MergeInstruction::toString() const {
   return fmt::format("merge [{}] [{}]", block_id1, block_id2);
 }
 
-bool dumpInstructions(const std::string& file_path, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+bool dumpInstructions(const std::string& file_path, const std::vector<std::shared_ptr<Instruction>>& header, const std::vector<std::shared_ptr<Instruction>>& instructions) {
   std::ofstream ofs(file_path.c_str());
+  for (const auto& inst : header) {
+    assert(inst);
+    ofs << inst->toString() << std::endl;
+  }
   for (const auto& inst : instructions) {
     assert(inst);
     ofs << inst->toString() << std::endl;

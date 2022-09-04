@@ -98,4 +98,5 @@ struct MergeInstruction : public Instruction {
 
 bool dumpInstructions(
     const std::string& file_path,
+    const std::vector<std::shared_ptr<Instruction>>& header,
     const std::vector<std::shared_ptr<Instruction>>& instructions);
