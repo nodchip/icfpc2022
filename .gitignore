@@ -53,6 +53,7 @@
 /build
 
 # logs
+*.log.*
 /src/*.log.*
 /vs/solver/*.log.*
 *.INFO
