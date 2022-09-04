@@ -69,7 +69,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>274877906944</StackReserveSize>
-      <AdditionalDependencies>fmtd.lib;glogd.lib;opencv_world460.lib</AdditionalDependencies>
+      <AdditionalDependencies>fmtd.lib;glogd.lib;opencv_world460d.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
