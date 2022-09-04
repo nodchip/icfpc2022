@@ -69,6 +69,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <StackReserveSize>274877906944</StackReserveSize>
+      <AdditionalDependencies>fmtd.lib;glogd.lib;opencv_world460.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY /D /Y $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
@@ -108,6 +109,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(O
   <ItemGroup>
     <ClCompile Include="..\..\libs\lodepng\lodepng_win32.cpp" />
     <ClCompile Include="..\..\src\block.cpp" />
+    <ClCompile Include="..\..\src\border_solver.cpp" />
     <ClCompile Include="..\..\src\canvas.cpp" />
     <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\instruction.cpp" />
