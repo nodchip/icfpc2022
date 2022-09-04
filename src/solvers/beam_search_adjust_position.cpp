@@ -108,22 +108,34 @@ public:
           }
           else if (auto col = std::dynamic_pointer_cast<ColorInstruction>(work[i])) {
             if (adjust_color) {
-              // [0, i) までで止めないとブロックが消される
-              auto head = work;
-              head.erase(head.begin() + i, head.end());
-              auto canvas = computeCost(*args.painting, initial_canvas, head)->canvas;
-              auto iblock = canvas->blocks.find(col->block_id);
-              if (iblock != canvas->blocks.end()) {
-                auto block = iblock->second;
-                auto color = geometricMedianColor(*args.painting, block->bottomLeft, block->topRight, true);
+              // 存在しないはずの色を設定して全体を描画することで、最後にどの領域に対応する命令かが分かる(ynasu案)
+              Point bottomLeft(0, 0), topRight(0, 0);
+              {
+                const RGBA marker_color(0, 255, 0, 128); // 自然には存在しないはずと思いたい
+                auto temp = work;
+                temp[i] = std::make_shared<ColorInstruction>(col->block_id, marker_color);
+                auto canvas = computeCost(*args.painting, initial_canvas, temp)->canvas;
+                assert(canvas);
+                for (const auto& [_, block] : canvas->blocks) {
+                  if (auto simple_block = std::dynamic_pointer_cast<SimpleBlock>(block)) {
+                    if (simple_block->color == marker_color) {
+                      bottomLeft = simple_block->bottomLeft;
+                      topRight = simple_block->topRight;
+                      break;
+                    }
+                  }
+                }
+              }
+              if (bottomLeft != topRight) {
+                if (verbose) LOG(INFO) << fmt::format("found region to replace. ({},{})-({},{})", bottomLeft.px, bottomLeft.py, topRight.px, topRight.py);
+                auto color = geometricMedianColor(*args.painting, bottomLeft, topRight, true);
                 if (color) {
                   auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
                   work[i] = new_col;
                   std::optional<CostBreakdown> cost;
-                  try {
+                  try { 
                     cost = computeCost(*args.painting, initial_canvas, work);
-                  }
-                  catch (const InvalidInstructionException& e) {
+                  } catch (const InvalidInstructionException& e) {
                     // ignore
                   }
                   if (cost && 0 < cost->total && (next_candidates.size() < beam_width || cost->total < next_candidates.top().first)) {
