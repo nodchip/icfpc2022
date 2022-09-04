@@ -30,35 +30,6 @@ class DpSolver final : public SolverBase {
    public:
     State() = default;
 
-    void InitWithColor(const Painting& painting,
-                       const int x0,
-                       const int y0,
-                       const int x1,
-                       const int y1) {
-      assert(x0 != x1);
-      assert(y0 != y1);
-      this->x0 = x0;
-      this->y0 = y0;
-      this->x1 = x1;
-      this->y1 = y1;
-      const int area = (y1 - y0) * (x1 - x0);
-      instruction_multiplier = 1.0 * painting.width * painting.height / area;
-
-      double action_cost = 0;
-      if (area <= 10000) {
-        const auto [color, distance] = GetBestColor(painting, x0, y0, x1, y1);
-        color_instruction = std::make_shared<ColorInstruction>("", color);
-        similarity_cost = distance * SimilarityChecker::alpha;
-        base_color = color;
-        action_cost =
-            std::round(ColorInstruction::kBaseCost * instruction_multiplier);
-      } else {
-        similarity_cost = 1e+20;
-      }
-
-      cost = similarity_cost + action_cost;
-    }
-
     void UpdateOutput(const std::string& block_id,
                       SolverOutputs& output) const {
       assert(instruction || color_instruction);
@@ -157,13 +128,13 @@ class DpSolver final : public SolverBase {
       return {RGBA(estimate[0], estimate[1], estimate[2], estimate[3]), diff};
     }
 
-    double cost = 1e+20;
-    double similarity_cost = 1e+20;
     int x0 = -1;
     int y0 = -1;
     int x1 = -1;
     int y1 = -1;
     double instruction_multiplier;
+    double cost = 1e+20;
+    double similarity_cost = 1e+20;
     std::shared_ptr<ColorInstruction> color_instruction;
     std::optional<RGBA> base_color;
     std::shared_ptr<Instruction> instruction;
@@ -250,7 +221,63 @@ class DpSolver final : public SolverBase {
                         const std::vector<int>& xs,
                         const std::vector<int>& ys,
                         States& states) {
+    static constexpr double multiplier_threashold = 0;
     LOG(INFO) << "Initialization starts";
+
+    // Compute values with raw types first to improve speed
+    const int num_xs = xs.size() - 1;
+    const int num_ys = ys.size() - 1;
+    auto base_colors =
+        CreateMultiDimVec<RGBA>(num_ys, num_ys + 1, num_xs, num_xs + 1, RGBA());
+    auto color_costs =
+        CreateMultiDimVec<double>(num_ys, num_ys + 1, num_xs, num_xs + 1,
+                                  std::numeric_limits<double>::infinity());
+    auto similarity_costs =
+        CreateMultiDimVec<double>(num_ys, num_ys + 1, num_xs, num_xs + 1,
+                                  std::numeric_limits<double>::infinity());
+    const double canvas_area = painting.width * painting.height;
+    for (int iy0 = 0; iy0 < num_ys; ++iy0) {
+      const int y0 = ys[iy0];
+      for (int iy1 = iy0 + 1; iy1 <= num_ys; ++iy1) {
+        const int y1 = ys[iy1];
+        for (int ix0 = 0; ix0 < num_xs; ++ix0) {
+          const int x0 = xs[ix0];
+          for (int ix1 = ix0 + 1; ix1 <= num_xs; ++ix1) {
+            const int x1 = xs[ix1];
+            const int grid_area = (y1 - y0) * (x1 - x0);
+            const double multiplier = canvas_area / grid_area;
+            if (multiplier < multiplier_threashold) {
+              continue;
+            }
+
+            const RGBA base_color = *geometricMedianColor(
+                painting, Point(x0, y0), Point(x1, y1), false, 10);
+            double cost = 0.0;
+            for (int y = y0; y < y1; ++y) {
+              for (int x = x0; x < x1; ++x) {
+                double distance2 = 0.0;
+                const RGBA& color = painting.frame[x + y * painting.width];
+                for (int c = 0; c < 4; ++c) {
+                  const int diff = int(color[c]) - int(base_color[c]);
+                  distance2 += diff * diff;
+                }
+                cost += std::sqrt(distance2);
+              }
+            }
+
+            const double similarity = SimilarityChecker::alpha * cost;
+            const double action =
+                std::round(ColorInstruction::kBaseCost * multiplier);
+            base_colors[iy0][iy1][ix0][ix1] = base_color;
+            color_costs[iy0][iy1][ix0][ix1] = similarity + action;
+            similarity_costs[iy0][iy1][ix0][ix1] = similarity;
+          }
+        }
+      }
+    }
+    LOG(INFO) << "Prepare for initialization is done";
+
+    // Restore the result into structured data
     for (int iy0 = 0; iy0 < ys.size() - 1; ++iy0) {
       const int y0 = ys[iy0];
       for (int iy1 = iy0 + 1; iy1 < ys.size(); ++iy1) {
@@ -259,8 +286,24 @@ class DpSolver final : public SolverBase {
           const int x0 = xs[ix0];
           for (int ix1 = ix0 + 1; ix1 < xs.size(); ++ix1) {
             const int x1 = xs[ix1];
+            const double grid_area = (y1 - y0) * (x1 - x0);
+            const double multiplier = canvas_area / grid_area;
+
             auto& state = states[iy0][iy1][ix0][ix1];
-            state.InitWithColor(painting, x0, y0, x1, y1);
+            state.x0 = x0;
+            state.y0 = y0;
+            state.x1 = x1;
+            state.y1 = y1;
+            state.instruction_multiplier = multiplier;
+
+            if (multiplier < multiplier_threashold) {
+              continue;
+            }
+            state.similarity_cost = similarity_costs[iy0][iy1][ix0][ix1];
+            state.cost = color_costs[iy0][iy1][ix0][ix1];
+            state.base_color = base_colors[iy0][iy1][ix0][ix1];
+            state.color_instruction =
+                std::make_shared<ColorInstruction>("", *state.base_color);
           }
         }
       }
