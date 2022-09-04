@@ -36,7 +36,7 @@ def main():
         for build_number in range(args.first_build_number, args.last_build_number + 1):
             url = f'{args.url}{build_number}/stop'
             print(url)
-            response = requests.post(url, auth=('hnoda', args.token))
+            response = requests.post(url, auth=(args.user_name, args.token))
             print(response.status_code)
 
     if args.start:
