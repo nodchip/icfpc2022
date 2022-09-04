@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
   bool visualize = false;
   bool output_phase_isl = true;
   bool output_meta = true;
+  bool output_image = true;
   sub_solve->add_option("solver_name", solver_names, "solver name or comma-separated list of solver names");
   sub_solve->add_option("problem_file", problem_file, "problem file path");
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
@@ -76,6 +77,7 @@ int main(int argc, char* argv[]) {
   sub_solve->add_flag("--visualize", visualize, "realtime visualize");
   sub_solve->add_flag("--output-phase,!--no-output-phase", output_phase_isl, "output phase ISL files (outfile.1.isl, outfile.2.isl, ..)");
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
+  sub_solve->add_flag("--output-image,!--no-output-image", output_image, "output image file of intermediate/final canvas");
   SolverRegistry::setOptionParser(sub_solve);
 
   auto sub_eval = app.add_subcommand("eval");
@@ -124,6 +126,23 @@ int main(int argc, char* argv[]) {
     return initial_solution;
   };
 
+  auto output_file_path = [output_solution_isl](std::string new_ext) {
+    auto ext = output_solution_isl.find(".isl");
+    if (ext != std::string::npos) {
+      return fmt::format("{}{}", output_solution_isl.substr(0, ext), new_ext);
+    } else {
+      return fmt::format("{}{}", output_solution_isl, new_ext);
+    }
+  };
+  auto output_phase_file_path = [output_solution_isl](int phase, std::string new_ext) {
+    auto ext = output_solution_isl.find(".isl");
+    if (ext != std::string::npos) {
+      return fmt::format("{}.phase{}{}", output_solution_isl.substr(0, ext), phase, new_ext);
+    } else {
+      return fmt::format("{}.phase{}{}", output_solution_isl, phase, new_ext);
+    }
+  };
+
   if (list_solvers) {
     SolverRegistry::displaySolvers();
     return 0;
@@ -146,6 +165,7 @@ int main(int argc, char* argv[]) {
       std::make_shared<CommentInstruction>(fmt::format("command line  : {}", getArgString(argc, argv))),
       std::make_shared<CommentInstruction>(fmt::format("git commit id : {}", getCommitId())),
     };
+
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
     if (!initial_solution.empty()) {
       auto cost = computeCost(*problem, initial_canvas, initial_solution);
@@ -157,6 +177,7 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
+      if (output_image) storeCanvasToFile(output_phase_file_path(0, ".png"), *cost->canvas);
     }
 
     SolverArguments arg(problem, initial_canvas, initial_canvas);
@@ -167,16 +188,9 @@ int main(int argc, char* argv[]) {
     }
 
     int phase = 1;
-    auto output_phase_file_path = [output_solution_isl](int phase) {
-      auto ext = output_solution_isl.find(".isl");
-      if (ext != std::string::npos) {
-        return fmt::format("{}.phase{}.isl", output_solution_isl.substr(0, ext), phase);
-      } else {
-        return fmt::format("{}.phase{}", output_solution_isl, phase);
-      }
-    };
 
     SolverOutputs out;
+    CanvasPtr last_canvas;
     for (auto solver_name : solver_name_list) {
       LOG(INFO) << fmt::format("-----------[ {}: {} ]-----------", phase, solver_name);
       auto solver = SolverRegistry::getSolver(solver_name);
@@ -206,11 +220,15 @@ int main(int argc, char* argv[]) {
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Total Cost : {}", cost->total)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Elapsed    : {} s", solve_s)));
 
-      if (output_phase_isl && phase < solver_name_list.size()) {
-        auto file_path = output_phase_file_path(phase);
-        dumpInstructions(file_path, header, out.solution);
-        LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
+      if (phase < solver_name_list.size()) {
+        if (output_phase_isl) {
+          auto file_path = output_phase_file_path(phase, ".isl");
+          dumpInstructions(file_path, header, out.solution);
+          LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
+        }
+        if (output_image) storeCanvasToFile(output_phase_file_path(phase, ".png"), *cost->canvas);
       }
+      last_canvas = cost->canvas;
 
       // successive processing.
       arg.optional_initial_solution = out.solution;
@@ -219,6 +237,7 @@ int main(int argc, char* argv[]) {
     }
 
     dumpInstructions(output_solution_isl, header, out.solution);
+    if (output_image) storeCanvasToFile(output_file_path(".png"), *last_canvas);
     LOG(INFO) << fmt::format("Dumped final {} instructions to : {}", out.solution.size(), output_solution_isl);
 
     return 0;
