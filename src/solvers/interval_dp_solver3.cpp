@@ -214,7 +214,7 @@ public:
           stack.emplace_back(b, t, division[1], r, name + ".1");
         } else if (division[2] == 1) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][division[1]][r]));
-          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, yticks[division[1]]));
+          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
           stack.emplace_back(b, t, l, division[1], name + ".0");
         } else {
           ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
