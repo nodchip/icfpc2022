@@ -4,6 +4,7 @@
 #include "solver_registry.h"
 #include "instruction.h"
 #include "timer.h"
+#include "similarity_checker.h"
 
 // TODO: pragma dll load
 #include <opencv2/core.hpp>
@@ -12,127 +13,211 @@
 
 
 
-cv::Mat_<cv::Vec4b> createCVImage(const Canvas& canvas, bool drawBorder) {
-  Frame frame = Painter::draw(canvas, false);
-
-  const int pixel = drawBorder ? 2 : 1;
-  const int W = canvas.width;
-  const int H = canvas.height;
-  std::vector<uint8_t> image(W * pixel * H * pixel * 4);
-  for (int y = 0; y < H; ++y) {
-    for (int x = 0; x < W; ++x) {
-      // BGRA
-      for (int i = 0; i < pixel; ++i) {
-        for (int j = 0; j < pixel; ++j) {
-          image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 0] = frame[W * y + x][2];
-          image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 1] = frame[W * y + x][1];
-          image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 2] = frame[W * y + x][0];
-          image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 3] = frame[W * y + x][3];
-        }
-      }
-    }
+struct MouseParams;
+using MouseParamsPtr = std::shared_ptr<MouseParams>;
+struct MouseParams {
+  int pe, px, py, pf;
+  int e, x, y, f;
+  MouseParams() { e = x = y = f = pe = px = py = pf = INT_MAX; };
+  inline void load(int e_, int x_, int y_, int f_) {
+    pe = e;
+    px = x;
+    py = y;
+    pf = f;
+    e = e_;
+    x = x_;
+    y = y_;
+    f = f_;
   }
-
-  if (drawBorder) {
-    const RGBA border_color{ 0, 255, 0, 255 };
-    for (const auto& [block_id, block] : canvas.blocks) {
-      assert(block);
-      // i* は画像座標
-      std::vector<std::tuple<int, int>> border_pixels;
-      int ixs[2] = {
-        block->bottomLeft.px * pixel,
-        block->topRight.px * pixel - 1,
-      };
-      for (int iy = block->bottomLeft.py * pixel; iy < block->topRight.py * pixel; ++iy) {
-        for (auto ix : ixs) {
-          border_pixels.emplace_back(ix, iy);
-        }
-      }
-      int iys[2] = {
-        block->bottomLeft.py * pixel,
-        block->topRight.py * pixel - 1,
-      };
-      for (int ix = block->bottomLeft.px * pixel; ix < block->topRight.px * pixel; ++ix) {
-        for (auto iy : iys) {
-          border_pixels.emplace_back(ix, iy);
-        }
-      }
-      for (auto [ix, iy] : border_pixels) {
-        image[4 * (W * pixel * iy + ix) + 0] = border_color[0];
-        image[4 * (W * pixel * iy + ix) + 1] = border_color[1];
-        image[4 * (W * pixel * iy + ix) + 2] = border_color[2];
-        image[4 * (W * pixel * iy + ix) + 3] = border_color[3];
-      }
-    }
+  inline bool clicked_left() const { return e == 1 && pe == 0; }
+  inline bool clicked_right() const { return e == 2 && pe == 0; }
+  inline bool released_left() const { return e == 4; }
+  inline bool released_right() const { return e == 5; }
+  inline bool drugging_left() const { return e == 0 && f == 1; }
+  inline bool drugging_right() const { return e == 0 && f == 2; }
+  inline std::pair<int, int> coord() const { return { x, y }; }
+  inline std::pair<int, int> displacement() const {
+    return { abs(x - px) > 10000 ? 0 : (x - px), abs(y - py) ? 0 : (y - py) };
   }
-
-  // flip.
-  for (int iy = 0; iy < H * pixel / 2; ++iy) {
-    uint8_t* src_line = &image[4 * W * pixel * iy];
-    uint8_t* dst_line = &image[4 * W * pixel * (H * pixel - 1 - iy)];
-    for (int b = 0; b < 4 * W * pixel; ++b) {
-      std::swap(src_line[b], dst_line[b]);
-    }
+  std::string str() const {
+    return fmt::format(
+      "SMouseParams [(e,x,y,f)=({},{},{},{}), (pe,px,py,pf)=({},{},{},{})", e,
+      x, y, f, pe, px, py, pf);
   }
-
-  cv::Mat_<cv::Vec4b> image_cv(H * pixel, W * pixel);
-  std::memcpy(image_cv.ptr(), image.data(), sizeof(uint8_t) * 4 * H * pixel * W * pixel);
-
-  return image_cv;
-}
-
-cv::Mat_<cv::Vec4b> createCVImageWithInfo(const Canvas& canvas, bool drawBorder, const std::string& msg = "") {
-
-  auto img_frame = createCVImage(canvas, drawBorder);
-  const int width = img_frame.cols, bottom_height = img_frame.rows;
-  const int top_height = 50;
-
-  cv::Mat_<cv::Vec4b> img_info(top_height, width, cv::Vec4b(200, 200, 200, 255));
-  cv::putText(img_info, msg, cv::Point(0, top_height / 2), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0, 0), 1, cv::LINE_AA);
-
-  cv::Mat_<cv::Vec4b> img(bottom_height + top_height, width);
-  img_info.copyTo(img(cv::Rect(0, 0, width, top_height)));
-  img_frame.copyTo(img(cv::Rect(0, top_height, bottom_height, width)));
-
-  return img;
-}
-
+  friend std::ostream& operator<<(std::ostream& o, const MouseParams& obj) {
+    o << obj.str();
+    return o;
+  }
+  friend std::ostream& operator<<(std::ostream& o, const MouseParamsPtr& obj) {
+    o << obj->str();
+    return o;
+  }
+  friend std::ostream& operator<<(std::ostream& o, const MouseParams* obj) {
+    o << obj->str();
+    return o;
+  }
+};
 
 struct SeekBarVisualizer {
 
   std::string winname = "img";
 
+  bool draw_border;
+
   Interpreter interpreter;
-  std::vector<CanvasPtr> canvas_list;
+  PaintingPtr painting;
+
   std::vector<std::shared_ptr<Instruction>> instructions;
+  std::vector<CanvasPtr> canvas_list;
+  std::vector<int> inst_cost_list;
+  std::vector<double> sim_cost_list;
 
   int frame_id = 0;
   cv::Mat_<cv::Vec4b> img;
+  MouseParamsPtr mp;
 
-  SeekBarVisualizer(const CanvasPtr& initial_canvas) {
+  SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas, bool draw_border = true)
+    : painting(painting), draw_border(draw_border)
+  {
+    mp = std::make_shared<MouseParams>();
     interpreter.top_level_id_counter = initial_canvas->calcTopLevelId();
+    instructions.push_back(std::make_shared<NopInstruction>());
     canvas_list.push_back(initial_canvas);
-    instructions.push_back(nullptr);
+    auto res = computeCost(*painting, canvas_list.front()->Clone(), instructions);
+    inst_cost_list.push_back(res->instruction);
+    sim_cost_list.push_back(res->similarity);
   }
 
   void read_instruction(const std::shared_ptr<Instruction>& inst) {
     auto canvas = canvas_list.back()->Clone();
-    int cost = -1;
-    auto res = interpreter.Interpret(canvas, inst);
-    canvas_list.push_back(canvas);
+    interpreter.Interpret(canvas, inst);
     instructions.push_back(inst);
+    canvas_list.push_back(canvas);
+    auto res = computeCost(*painting, canvas_list.front()->Clone(), instructions);
+    inst_cost_list.push_back(res->instruction);
+    sim_cost_list.push_back(res->similarity);
+  }
+
+  cv::Mat_<cv::Vec4b> create_board_image() {
+
+    const auto& canvas = canvas_list[frame_id];
+
+    Frame frame = Painter::draw(*canvas, false);
+
+    const int pixel = draw_border ? 2 : 1;
+    const int W = canvas->width;
+    const int H = canvas->height;
+    std::vector<uint8_t> image(W * pixel * H * pixel * 4);
+    for (int y = 0; y < H; ++y) {
+      for (int x = 0; x < W; ++x) {
+        // BGRA
+        for (int i = 0; i < pixel; ++i) {
+          for (int j = 0; j < pixel; ++j) {
+            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 0] = frame[W * y + x][2];
+            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 1] = frame[W * y + x][1];
+            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 2] = frame[W * y + x][0];
+            image[4 * (W * pixel * (y * pixel + i) + (x * pixel + j)) + 3] = frame[W * y + x][3];
+          }
+        }
+      }
+    }
+
+    if (draw_border) {
+      const RGBA border_color{ 0, 255, 0, 255 };
+      for (const auto& [block_id, block] : canvas->blocks) {
+        assert(block);
+        // i* は画像座標
+        std::vector<std::tuple<int, int>> border_pixels;
+        int ixs[2] = {
+          block->bottomLeft.px * pixel,
+          block->topRight.px * pixel - 1,
+        };
+        for (int iy = block->bottomLeft.py * pixel; iy < block->topRight.py * pixel; ++iy) {
+          for (auto ix : ixs) {
+            border_pixels.emplace_back(ix, iy);
+          }
+        }
+        int iys[2] = {
+          block->bottomLeft.py * pixel,
+          block->topRight.py * pixel - 1,
+        };
+        for (int ix = block->bottomLeft.px * pixel; ix < block->topRight.px * pixel; ++ix) {
+          for (auto iy : iys) {
+            border_pixels.emplace_back(ix, iy);
+          }
+        }
+        for (auto [ix, iy] : border_pixels) {
+          image[4 * (W * pixel * iy + ix) + 0] = border_color[0];
+          image[4 * (W * pixel * iy + ix) + 1] = border_color[1];
+          image[4 * (W * pixel * iy + ix) + 2] = border_color[2];
+          image[4 * (W * pixel * iy + ix) + 3] = border_color[3];
+        }
+      }
+    }
+
+    // flip.
+    for (int iy = 0; iy < H * pixel / 2; ++iy) {
+      uint8_t* src_line = &image[4 * W * pixel * iy];
+      uint8_t* dst_line = &image[4 * W * pixel * (H * pixel - 1 - iy)];
+      for (int b = 0; b < 4 * W * pixel; ++b) {
+        std::swap(src_line[b], dst_line[b]);
+      }
+    }
+
+    cv::Mat_<cv::Vec4b> image_cv(H * pixel, W * pixel);
+    std::memcpy(image_cv.ptr(), image.data(), sizeof(uint8_t) * 4 * H * pixel * W * pixel);
+
+    return image_cv;
+  }
+
+  cv::Mat_<cv::Vec4b> create_info_image() {
+    const int width = painting->width * (draw_border ? 2 : 1);
+    const int height = 200;
+    std::vector<std::string> msgs;
+    msgs.push_back(fmt::format("command: {}", instructions[frame_id]->toString()));
+    msgs.push_back(fmt::format(" inst cost: {}", inst_cost_list[frame_id]));
+    msgs.push_back(fmt::format(" sim cost: {}", sim_cost_list[frame_id]));
+    msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
+    msgs.push_back("");
+    msgs.push_back(mp->str());
+    cv::Mat_<cv::Vec4b> img_info(height, width, cv::Vec4b(200, 200, 200, 255));
+    for (int i = 0; i < msgs.size(); i++) {
+      cv::putText(img_info, msgs[i], cv::Point(5, (i + 1) * 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0, 0), 1, cv::LINE_AA);
+    }
+    return img_info;
+  }
+
+  cv::Mat_<cv::Vec4b> create_image() {
+
+    auto img_frame = create_board_image();
+    const int width_frame = img_frame.cols;
+    const int height_frame = img_frame.rows;
+
+    auto img_info = create_info_image();
+    const int width_info = img_info.cols;
+    const int height_info = img_info.rows;
+
+    assert(width_frame == width_info);
+
+    cv::Mat_<cv::Vec4b> img(height_info + height_frame, width_frame);
+    img_info.copyTo(img(cv::Rect(0, 0, width_info, height_info)));
+    img_frame.copyTo(img(cv::Rect(0, height_info, width_frame, height_frame)));
+
+    return img;
   }
 
   void vis() {
     cv::namedWindow(winname, cv::WINDOW_AUTOSIZE);
-    img = createCVImageWithInfo(*canvas_list.front(), true);
+    img = create_image();
     cv::imshow(winname, img);
     cv::createTrackbar("frame id", winname, &frame_id, canvas_list.size() - 1, frame_callback, this);
     cv::setTrackbarPos("frame id", winname, 0);
     cv::setTrackbarMin("frame id", winname, 0);
+    cv::setMouseCallback(winname, mouse_callback, this);
     while (true) {
       int c = cv::waitKey(15);
       if (c == 27) break;
+      img = create_image();
       cv::imshow(winname, img);
     }
   }
@@ -140,8 +225,11 @@ struct SeekBarVisualizer {
   static void frame_callback(int id, void* param) {
     auto vis = static_cast<SeekBarVisualizer*>(param);
     vis->frame_id = id;
-    auto inst = vis->instructions[id];
-    vis->img = createCVImageWithInfo(*vis->canvas_list[id], true, inst ? inst->toString() : "initial canvas");
+  }
+
+  static void mouse_callback(int e, int x, int y, int f, void* param) {
+    auto vis = static_cast<SeekBarVisualizer*>(param);
+    vis->mp->load(e, x, y, f);
   }
 
 };
@@ -156,7 +244,7 @@ public:
     SolverOutputs ret;
 
     auto canvas = args.initial_canvas->Clone();
-    SeekBarVisualizer visualizer(canvas);
+    SeekBarVisualizer visualizer(args.painting, canvas);
 
     auto instructions = args.optional_initial_solution;
     for (const auto& inst : instructions) {
