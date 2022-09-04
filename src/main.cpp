@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Total Cost : {}", cost->total)));
       out.solution.push_back(std::make_shared<CommentInstruction>(fmt::format("Elapsed    : {} s", solve_s)));
 
-      if (output_phase_isl) {
+      if (output_phase_isl && phase < solver_name_list.size()) {
         auto file_path = output_phase_file_path(phase);
         dumpInstructions(file_path, out.solution);
         LOG(INFO) << fmt::format("Dumped {} instructions to : {}", out.solution.size(), file_path);
