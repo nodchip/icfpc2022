@@ -2,6 +2,7 @@
 #include "solver_registry.h"
 #include "instruction.h"
 #include <array>
+#include <omp.h>
 #include <fmt/core.h>
 
 template <typename T, typename... Args>
@@ -20,11 +21,13 @@ public:
     double prune_threshold = 8.0;
     bool allow_point_cut = false;
     bool inherit_ticks = false;
+    int num_threads = 0; // 0: auto
     void setOptionParser(CLI::App* app) override {
       app->add_option("--interval-dp-3-num-intervals", num_intervals);
       app->add_option("--interval-dp-3-prune-threshold", prune_threshold);
       app->add_flag("--interval-dp-3-allow-point-cut", allow_point_cut);
       app->add_flag("--interval-dp-3-inherit-ticks", inherit_ticks);
+      app->add_option("--interval-dp-3-num-threads", num_threads);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -36,10 +39,13 @@ public:
     const double prune_threshold = getOption<Option>()->prune_threshold;
     const bool allow_point_cut = getOption<Option>()->allow_point_cut;
     const bool inherit_ticks = getOption<Option>()->inherit_ticks;
+    int num_threads = getOption<Option>()->num_threads;
+    if (num_threads <= 0) num_threads = omp_get_max_threads();
     LOG(INFO) << "num_intervals = " << num_intervals;
     LOG(INFO) << "prune_threshold = " << prune_threshold;
     LOG(INFO) << "allow_point_cut = " << allow_point_cut;
     LOG(INFO) << "inherit_ticks = " << inherit_ticks;
+    LOG(INFO) << "num_threads = " << num_threads;
     const auto canvas = inherit_ticks ? args.initial_canvas : args.previous_canvas;
     const auto top_level_id = std::to_string(canvas->calcTopLevelId());
     assert(canvas->blocks[top_level_id]->size == canvas->size());
@@ -88,6 +94,9 @@ public:
     auto color_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
     auto similarity_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
 
+#pragma omp parallel num_threads(num_threads) if(num_threads > 1)
+    {
+#pragma omp for
     for (int b = 0; b < H; ++b) {
       for (int t = b + 1; t <= H; ++t) {
         for (int l = 0; l < W; ++l) {
@@ -113,6 +122,7 @@ public:
           }
         }
       }
+    }
     }
 
     // Line cut move で分割する手順を区間 DP で求める

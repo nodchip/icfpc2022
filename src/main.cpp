@@ -3,6 +3,7 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <omp.h>
 
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
@@ -116,6 +117,12 @@ int main(int argc, char* argv[]) {
   sub_eval->add_option("solution_isl", initial_solution_isl, "input solution ISL file path");
 
   CLI11_PARSE(app, argc, argv);
+  LOG(INFO) << "command line: " << getArgString(argc, argv);
+#ifdef _OPENMP
+  LOG(INFO) << fmt::format("OpenMP max_threads={}", omp_get_max_threads());
+#else
+  LOG(INFO) << fmt::format("No OpenMP");
+#endif
 
   auto loadInitialConfiguration = [&](PaintingPtr problem) {
     std::string config_path = problem_file;
