@@ -18,10 +18,12 @@ public:
   struct Option : public OptionBase {
     int num_intervals = 10;
     double prune_threshold = 8.0;
+    bool allow_point_cut = false;
     bool inherit_ticks = false;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--interval-dp-3-num-intervals", num_intervals);
       app->add_option("--interval-dp-3-prune-threshold", prune_threshold);
+      app->add_flag("--interval-dp-3-allow-point-cut", allow_point_cut);
       app->add_flag("--interval-dp-3-inherit-ticks", inherit_ticks);
     }
   };
@@ -30,10 +32,13 @@ public:
   IntervalDPSolver3() { }
   SolverOutputs solve(const SolverArguments &args) override {
     const int num_intervals = getOption<Option>()->num_intervals;
+    
     const double prune_threshold = getOption<Option>()->prune_threshold;
+    const bool allow_point_cut = getOption<Option>()->allow_point_cut;
     const bool inherit_ticks = getOption<Option>()->inherit_ticks;
     LOG(INFO) << "num_intervals = " << num_intervals;
     LOG(INFO) << "prune_threshold = " << prune_threshold;
+    LOG(INFO) << "allow_point_cut = " << allow_point_cut;
     LOG(INFO) << "inherit_ticks = " << inherit_ticks;
     const auto canvas = inherit_ticks ? args.initial_canvas : args.previous_canvas;
     const auto top_level_id = std::to_string(canvas->calcTopLevelId());
@@ -121,8 +126,50 @@ public:
             const int r = l + w;
             auto& best_cost = best_costs[b][t][l][r];
             best_cost = color_costs[b][t][l][r];
+            const int point_cut_cost = std::round(10.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
             const int cut_cost = std::round(7.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
             const int color_cost = std::round(5.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+            if (allow_point_cut) {
+              for (int my = b + 1; my < t; ++my) {
+                for (int mx = l + 1; mx < r; ++mx) {
+                  { // Point cut してから再帰的に処理する
+                    const double cost = point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
+                    if (cost < best_cost) {
+                      best_cost = cost;
+                      best_divisions[b][t][l][r] = {my, mx, -1};
+                    }
+                  }
+                  { // .0の色に塗ってから...
+                    const double cost = color_cost + point_cut_cost + similarity_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
+                    if (cost < best_cost) {
+                      best_cost = cost;
+                      best_divisions[b][t][l][r] = {my, mx, 0};
+                    }
+                  }
+                  { // .1の色に塗ってから...
+                    const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + similarity_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
+                    if (cost < best_cost) {
+                      best_cost = cost;
+                      best_divisions[b][t][l][r] = {my, mx, 1};
+                    }
+                  }
+                  { // .3の色に塗ってから...
+                    const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + similarity_costs[my][t][l][mx] + best_costs[my][t][mx][r];
+                    if (cost < best_cost) {
+                      best_cost = cost;
+                      best_divisions[b][t][l][r] = {my, mx, 3};
+                    }
+                  }
+                  { // .2の色に塗ってから...
+                    const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + similarity_costs[my][t][mx][r];
+                    if (cost < best_cost) {
+                      best_cost = cost;
+                      best_divisions[b][t][l][r] = {my, mx, 2};
+                    }
+                  }
+                }
+              }
+            }
             for (int m = b + 1; m < t; ++m) {
               { // Line cut してから上下を再帰的に処理する
                 const double cost = cut_cost + best_costs[b][m][l][r] + best_costs[m][t][l][r];
@@ -193,7 +240,40 @@ public:
       const auto [b, t, l, r, name] = stack.back();
       stack.pop_back();
       const auto& division = best_divisions[b][t][l][r];
-      if (division[0] >= 0) {
+      if (division[0] >= 0 && division[1] >= 0) {
+        assert(allow_point_cut);
+        if (division[2] == 0) {
+          ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][l][division[1]]));
+          ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
+          stack.emplace_back(b, division[0], division[1], r, name + ".1");
+          stack.emplace_back(division[0], t, l, division[1], name + ".3");
+          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+        } else if (division[2] == 1) {
+          ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][division[1]][r]));
+          ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
+          stack.emplace_back(b, division[0], l, division[1], name + ".0");
+          stack.emplace_back(division[0], t, l, division[1], name + ".3");
+          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+        } else if (division[2] == 3) {
+          ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[division[0]][t][l][division[1]]));
+          ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
+          stack.emplace_back(b, division[0], l, division[1], name + ".0");
+          stack.emplace_back(b, division[0], division[1], r, name + ".1");
+          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+        } else if (division[2] == 2) {
+          ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[division[0]][t][division[1]][r]));
+          ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
+          stack.emplace_back(b, division[0], l, division[1], name + ".0");
+          stack.emplace_back(b, division[0], division[1], r, name + ".1");
+          stack.emplace_back(division[0], t, l, division[1], name + ".3");
+        } else {
+          ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
+          stack.emplace_back(b, division[0], l, division[1], name + ".0");
+          stack.emplace_back(b, division[0], division[1], r, name + ".1");
+          stack.emplace_back(division[0], t, l, division[1], name + ".3");
+          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+        }
+      } else if (division[0] >= 0) {
         if (division[2] == 0) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][l][r]));
           ret.solution.push_back(std::make_shared<HorizontalCutInstruction>(name, yticks[division[0]]));
