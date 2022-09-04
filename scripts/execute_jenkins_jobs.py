@@ -25,12 +25,12 @@ def main():
                         help='Last problem number to be started.')
     parser.add_argument('--interval_dp_num_intervals', type=int,
                         help='Interval DP num intervals.')
-    parser.add_argument('--interval_dp_2_num_intervals', type=int,
-                        help='Interval DP2 num intervals.')
-    parser.add_argument('--interval_dp_3_num_intervals', type=int,
-                        help='Interval DP3 num intervals.')
-    parser.add_argument('--loop', type=int,
-                        help='Greedy num loops.')
+    parser.add_argument('--greedy_adjust_position_loop', type=int,
+                        help='Adjust position loop.')
+    parser.add_argument('--beam_search_adjust_position_beam_width', type=int,
+                        help='Adjust position loop.')
+    parser.add_argument('--num_threads', type=int,
+                        help='Num threads.')
 
     args = parser.parse_args()
 
@@ -46,9 +46,9 @@ def main():
             # Parameterized Build - Jenkins - Jenkins Wiki https://wiki.jenkins.io/display/JENKINS/Parameterized+Build
             parameters = {
                 'INTERNAL_DP_NUM_INTERVALS': str(args.interval_dp_num_intervals),
-                'INTERNAL_DP_2_NUM_INTERVALS': str(args.interval_dp_2_num_intervals),
-                'INTERNAL_DP_3_NUM_INTERVALS': str(args.interval_dp_3_num_intervals),
-                'LOOP': str(args.loop),
+                'NUM_THREADS': str(args.num_threads),
+                'ADJUST_POSITION_LOOP': str(args.greedy_adjust_position_loop),
+                'BEAM_SEARCH_ADJUST_POSITION_BEAM_WIDTH': str(args.beam_search_adjust_position_beam_width),
                 'PROBLEM_NUMBER': str(problem_number),
                 'SOLVER_NAME': str(args.solver_name),
             }
