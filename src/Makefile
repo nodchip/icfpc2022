@@ -30,7 +30,7 @@ LDFLAGS+=$(LIB_PATH)/lodepng/lodepng.o
 #CXXFLAGS+=-I$(LIB_PATH)/mpir
 #LDFLAGS+=-L$(LIB_PATH)/mpir/.libs -Wl,-rpath $(LIB_PATH)/mpir/.libs -lgmp -lgmpxx
 
-CXXFLAGS+=-I/usr/include/opencv4
+CXXFLAGS+=-I/usr/include/opencv4 -I/mingw64/include/opencv4
 LDFLAGS+=-lopencv_core -lopencv_highgui -lopencv_imgproc
 
 LDFLAGS+=-lpthread
