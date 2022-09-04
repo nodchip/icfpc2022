@@ -253,7 +253,7 @@ struct SeekBarVisualizer {
     cv::imshow(winname, img);
 
     cv::createTrackbar("frame id", winname, &frame_id, canvas_list.size() - 1, frame_callback, this);
-    cv::setTrackbarPos("frame id", winname, 0);
+    cv::setTrackbarPos("frame id", winname, canvas_list.size() - 1);
     cv::setTrackbarMin("frame id", winname, 0);
 
     cv::createTrackbar("alpha", winname, &alpha, 255, alpha_callback, this);
