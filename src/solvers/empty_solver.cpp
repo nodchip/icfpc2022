@@ -61,5 +61,42 @@ public:
   }
 };
 REGISTER_SOLVER("RemoveConflictingColorSolver", RemoveConflictingColorSolver);
+
+class RemoveMergedColorSolver : public SolverBase {
+public:
+  RemoveMergedColorSolver() { }
+  SolverOutputs solve(const SolverArguments &args) override {
+    SolverOutputs ret;
+    ret.solution = args.optional_initial_solution;
+    if (false) {
+      LOG(INFO) << args.previous_canvas->blocks.size();
+      for (auto& [_, b] : args.previous_canvas->blocks) {
+        if (auto simple_block = std::dynamic_pointer_cast<SimpleBlock>(b)) {
+          LOG(INFO) << fmt::format("Simple [{}] ({},{})-({},{})", b->id, b->bottomLeft.px, b->bottomLeft.py, b->topRight.px, b->topRight.py); 
+        } else if (auto simple_block = std::dynamic_pointer_cast<ComplexBlock>(b)) {
+          LOG(INFO) << fmt::format("Complex"); 
+        }
+      }
+    }
+    auto simple_block = std::dynamic_pointer_cast<SimpleBlock>(args.previous_canvas->blocks.find(std::to_string(args.previous_canvas->calcTopLevelId()))->second);
+    assert(simple_block);
+    assert(simple_block->bottomLeft == Point(0, 0));
+    assert(simple_block->topRight == Point(args.painting->width, args.painting->height));
+    bool found = false;
+    for (int i = 0; i < ret.solution.size(); ++i) {
+      if (std::dynamic_pointer_cast<CommentInstruction>(ret.solution[ret.solution.size() - 1 - i])) continue;
+      if (std::dynamic_pointer_cast<NopInstruction>(ret.solution[ret.solution.size() - 1 - i])) continue;
+      if (std::dynamic_pointer_cast<ColorInstruction>(ret.solution[ret.solution.size() - 1 - i])) {
+        ret.solution.erase(ret.solution.begin() + (ret.solution.size() - 1 - i));
+        found = true;
+        break;
+      }
+    }
+    assert(found);
+    LOG(INFO) << fmt::format("removed the last color instruction");
+    return ret;
+  }
+};
+REGISTER_SOLVER("RemoveMergedColorSolver", RemoveMergedColorSolver);
 // vim:ts=2 sw=2 sts=2 et ci
 
