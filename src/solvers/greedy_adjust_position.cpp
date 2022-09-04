@@ -34,15 +34,15 @@ public:
     ret.solution = args.optional_initial_solution;
 
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ
-    std::vector<std::shared_ptr<Instruction>> work = ret.solution;
     int best_cost = std::numeric_limits<int>::max();
     std::vector<std::shared_ptr<Instruction>> best_inst = ret.solution;
     for (size_t iloop = 0; iloop < loop; ++iloop) {
       if (verbose) LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
       const int best_cost_at_the_beginning_of_loop = best_cost;
+      std::vector<std::shared_ptr<Instruction>> work = best_inst;
       for (size_t i = 0; i < work.size(); ++i) {
         //LOG(INFO) << fmt::format("i={}/{}({}%)", i, work.size(), 100.0 * i / work.size());
-        if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(best_inst[i])) {
+        if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(work[i])) {
           for (int d = -delta; d <= delta; ++d) {
             auto new_vcut = std::make_shared<VerticalCutInstruction>(vcut->block_id, vcut->lineNumber + d);
             work[i] = new_vcut;
@@ -59,7 +59,7 @@ public:
             }
           }
           work[i] = vcut;
-        } else if (auto hcut = std::dynamic_pointer_cast<HorizontalCutInstruction>(best_inst[i])) {
+        } else if (auto hcut = std::dynamic_pointer_cast<HorizontalCutInstruction>(work[i])) {
           for (int d = -delta; d <= delta; ++d) {
             auto new_hcut = std::make_shared<HorizontalCutInstruction>(hcut->block_id, hcut->lineNumber + d);
             work[i] = new_hcut;
@@ -76,7 +76,7 @@ public:
             }
           }
           work[i] = hcut;
-        } else if (auto col = std::dynamic_pointer_cast<ColorInstruction>(best_inst[i])) {
+        } else if (auto col = std::dynamic_pointer_cast<ColorInstruction>(work[i])) {
           if (adjust_color) {
             // [0, i) までで止めないとブロックが消される
             auto head = work;
