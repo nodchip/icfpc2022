@@ -21,3 +21,15 @@ std::string StringUtil::Trim(const std::string& s)
 {
   return TrimRight(TrimLeft(s));
 }
+
+std::string StringUtil::ReplaceAll(const std::string& s, const std::string& src, const std::string& dst) {
+  std::string work = s;
+  size_t next = 0;
+  while (true) {
+    size_t i = work.find(src, next);
+    if (i == std::string::npos) break;
+    work = work.replace(i, src.size(), dst);
+    next = i + dst.size();
+  }
+  return work;
+}

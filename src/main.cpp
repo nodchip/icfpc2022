@@ -15,6 +15,7 @@
 #include "similarity_checker.h"
 #include "interpreter.h"
 #include "solver_registry.h"
+#include "string_util.h"
 
 std::vector<std::string> split(std::string s, char delim) {
   std::vector<std::string> result;
@@ -102,10 +103,17 @@ std::optional<std::filesystem::path> guessProblemFile(std::string isl_file_path)
 struct RecordCSV {
   const bool create;
   std::ofstream ofs;
+  const std::vector<std::string> footer;
   int pid = 0;
-  RecordCSV(std::string problem_file)
+  static std::string escape(std::string s) {
+    s = StringUtil::ReplaceAll(s, "\"", "\"\"");
+    s = "\"" + s + "\"";
+    return s;
+  }
+  RecordCSV(std::string problem_file, const std::vector<std::string>& footer)
     : create(!std::filesystem::exists("record.csv"))
-    , ofs("record.csv", std::ios::app) {
+    , ofs("record.csv", std::ios::app)
+    , footer(footer) {
     if (create) {
       ofs << "problem,solver_name,elapsed_s,instruction_cost,similarity_cost,total_cost,..." << std::endl;
     }
@@ -113,17 +121,20 @@ struct RecordCSV {
       pid = std::stoi(std::filesystem::path(problem_file).filename().string());
     } catch (const std::invalid_argument&) {
     }
-    ofs << pid << ", ";
+    ofs << pid << ",";
   }
   ~RecordCSV() {
+    for (auto item : footer) {
+      ofs << escape(item) << ",";
+    }
     ofs << std::endl;
   }
   void append_phase(std::string solver_name, double elapsed_s, int inst_cost, int sim_cost, int total_cost) {
-    ofs << solver_name << ", ";
-    ofs << elapsed_s << ", ";
-    ofs << inst_cost << ", ";
-    ofs << sim_cost << ", ";
-    ofs << total_cost << ", ";
+    ofs << solver_name << ",";
+    ofs << elapsed_s << ",";
+    ofs << inst_cost << ",";
+    ofs << sim_cost << ",";
+    ofs << total_cost << ",";
   }
 };
 
@@ -259,7 +270,11 @@ int main(int argc, char* argv[]) {
     }
 
     std::shared_ptr<RecordCSV> csv;
-    if (record_csv) csv = std::make_shared<RecordCSV>(problem_file);
+    if (record_csv) {
+      csv = std::make_shared<RecordCSV>(problem_file, std::vector<std::string> {
+        getArgString(argc, argv),
+      });
+    }
 
     std::shared_ptr<Painting> problem = loadProblem();
     std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
