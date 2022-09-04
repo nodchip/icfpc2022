@@ -18,21 +18,26 @@ public:
   struct Option : public OptionBase {
     int num_intervals = 10;
     double prune_threshold = 8.0;
+    bool inherit_ticks = false;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--interval-dp-3-num-intervals", num_intervals);
       app->add_option("--interval-dp-3-prune-threshold", prune_threshold);
+      app->add_flag("--interval-dp-3-inherit-ticks", inherit_ticks);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
 
   IntervalDPSolver3() { }
   SolverOutputs solve(const SolverArguments &args) override {
-    const auto top_level_id = std::to_string(args.previous_canvas->calcTopLevelId());
-    assert(args.previous_canvas->blocks[top_level_id]->size == args.previous_canvas->size());
     const int num_intervals = getOption<Option>()->num_intervals;
     const double prune_threshold = getOption<Option>()->prune_threshold;
+    const bool inherit_ticks = getOption<Option>()->inherit_ticks;
     LOG(INFO) << "num_intervals = " << num_intervals;
     LOG(INFO) << "prune_threshold = " << prune_threshold;
+    LOG(INFO) << "inherit_ticks = " << inherit_ticks;
+    const auto canvas = inherit_ticks ? args.initial_canvas : args.previous_canvas;
+    const auto top_level_id = std::to_string(canvas->calcTopLevelId());
+    assert(canvas->blocks[top_level_id]->size == canvas->size());
     const int height = args.painting->height;
     const int width = args.painting->width;
     const auto get_value = [&, frame=args.painting->frame](int y, int x, int c) {
@@ -40,19 +45,35 @@ public:
     };
 
     // グリッドに分割する
-    // とりあえず縦横とも等分する。境界を探して設定すればより良くなるはず
-    std::vector<int> yticks;
-    for (int y = 0; y < height; y += height / num_intervals) {
-      yticks.push_back(y);
+    std::vector<int> yticks, xticks;
+    if (inherit_ticks) {
+      // 既存解で使われた境界を候補にする
+      std::set<int> yticks_set = {0, height};
+      std::set<int> xticks_set = {0, width};
+      for (const auto& instruction : args.optional_initial_solution) {
+        if (const auto hcut = std::dynamic_pointer_cast<HorizontalCutInstruction>(instruction)) {
+          yticks_set.insert(hcut->lineNumber);
+        }
+        if (const auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(instruction)) {
+          xticks_set.insert(vcut->lineNumber);
+        }
+      }
+      yticks.insert(yticks.end(), yticks_set.begin(), yticks_set.end());
+      xticks.insert(xticks.end(), xticks_set.begin(), xticks_set.end());
+    } else {
+      // 縦横とも等分する
+      for (int y = 0; y < height; y += height / num_intervals) {
+        yticks.push_back(y);
+      }
+      yticks.push_back(height);
+      for (int x = 0; x < width; x += width / num_intervals) {
+        xticks.push_back(x);
+      }
+      xticks.push_back(width);
     }
-    yticks.push_back(height);
-    std::vector<int> xticks;
-    for (int x = 0; x < width; x += width / num_intervals) {
-      xticks.push_back(x);
-    }
-    xticks.push_back(width);
     const int H = yticks.size() - 1;
     const int W = xticks.size() - 1;
+    LOG(INFO) << "H = " << H << ", W = " << W;
 
     // グリッドに沿った長方形を color move で平均色に塗ったときのコストを求める
     // move のコストと similarity のコストを両方足しておく
@@ -156,12 +177,16 @@ public:
 
     // 操作列を構築する
     SolverOutputs ret;
-    ret.solution = args.optional_initial_solution;
+    if (!inherit_ticks) {
+      ret.solution = args.optional_initial_solution;
+    }
     const auto add_comment = [&](const std::string& comment) {
       ret.solution.push_back(std::make_shared<CommentInstruction>(comment));
     };
     add_comment(fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W]))));
-    add_comment(fmt::format("num_intervals = {0}", num_intervals));
+    if (!inherit_ticks) {
+      add_comment(fmt::format("num_intervals = {0}", num_intervals));
+    }
     std::vector<std::tuple<int, int, int, int, std::string>> stack;
     stack.emplace_back(0, H, 0, W, top_level_id);
     while (!stack.empty()) {
@@ -185,14 +210,14 @@ public:
       } else if (division[1] >= 0) {
         if (division[2] == 0) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][l][division[1]]));
-          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, yticks[division[1]]));
+          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
           stack.emplace_back(b, t, division[1], r, name + ".1");
         } else if (division[2] == 1) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][division[1]][r]));
           ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, yticks[division[1]]));
           stack.emplace_back(b, t, l, division[1], name + ".0");
         } else {
-          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, yticks[division[1]]));
+          ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
           stack.emplace_back(b, t, l, division[1], name + ".0");
           stack.emplace_back(b, t, division[1], r, name + ".1");
         }
