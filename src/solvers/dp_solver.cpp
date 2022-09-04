@@ -110,7 +110,7 @@ class DpSolver final : public SolverBase {
         estimate[3] += c[3];
       }
       for (int i = 0; i < 4; ++i) {
-        estimate[i] = int(estimate[i] / colors.size());
+        estimate[i] = std::round(estimate[i] / n);
       }
 
       std::vector<double> weights(n);
@@ -137,6 +137,10 @@ class DpSolver final : public SolverBase {
         estimate[1] /= sum;
         estimate[2] /= sum;
         estimate[3] /= sum;
+      }
+
+      for (int i = 0; i < 4; ++i) {
+        estimate[i] = std::round(estimate[i]);
       }
 
       // Compute sum of distance
