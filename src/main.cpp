@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
 
-      auto cost = computeCost(*problem, initial_canvas, out.solution);
+      auto cost = computeCost(*problem, arg.canvas, out.solution);
       if (!cost) {
         LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
         return -1;
@@ -191,6 +191,7 @@ int main(int argc, char* argv[]) {
 
       // successive processing.
       arg.optional_initial_solution = out.solution;
+      arg.canvas = cost->canvas->Clone();
       ++phase;
     }
 
