@@ -24,6 +24,9 @@ LDFLAGS+=-L$(LIB_PATH)/fmt/build -lfmt
 CXXFLAGS+=-I$(LIB_PATH)/glog/src -I$(LIB_PATH)/glog_build
 LDFLAGS+=-L$(LIB_PATH)/glog_build -Wl,-rpath $(LIB_PATH)/glog_build -lglog
 
+CXXFLAGS+=-I$(LIB_PATH)/lodepng
+LDFLAGS+=$(LIB_PATH)/lodepng/lodepng.o
+
 #CXXFLAGS+=-I$(LIB_PATH)/mpir
 #LDFLAGS+=-L$(LIB_PATH)/mpir/.libs -Wl,-rpath $(LIB_PATH)/mpir/.libs -lgmp -lgmpxx
 

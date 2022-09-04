@@ -1,6 +1,11 @@
 #!/bin/bash
 # This script needs to be run on bash.
 
+echo "building lodepng"
+pushd $(dirname $0)/lodepng 
+make lodepng.o || exit 1
+popd
+
 echo "building fmt"
 pushd $(dirname $0)/fmt 
 mkdir -p build

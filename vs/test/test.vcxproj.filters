@@ -19,6 +19,9 @@
     <Filter Include="ソース ファイル\tests">
       <UniqueIdentifier>{1940e1c1-2cdc-4425-aee4-817850683f83}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lodepng">
+      <UniqueIdentifier>{0d7f2abc-58d0-49f6-ab8d-7d51e949f40d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\tests\test_example.cpp">
@@ -84,6 +87,9 @@
     <ClCompile Include="..\..\src\tests\test_canvas.cpp">
       <Filter>ソース ファイル\tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libs\lodepng\lodepng.cpp">
+      <Filter>lodepng</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -130,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\xorshift.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libs\lodepng\lodepng.h">
+      <Filter>lodepng</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
