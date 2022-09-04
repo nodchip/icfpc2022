@@ -8,9 +8,9 @@
 class MergeAll : public SolverBase {
 public:
   struct Option : public OptionBase {
-    bool emit_color = false;
+    bool emit_color = true;
     void setOptionParser(CLI::App* app) override {
-      app->add_flag("--merge-all-emit-color", emit_color);
+      app->add_flag("--merge-all-emit-color,!--merge-all-emit-color", emit_color);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
