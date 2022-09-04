@@ -13,7 +13,7 @@
 #endif
 
 TEST(TestCanvas, loadCanvasFromJSONFile) {
-  auto canvas = loadCanvasFromJSONFile(PROJECT_DIR "data/problems/30.initial.json");
+  auto canvas = loadCanvasFromJSONFile(PROJECT_DIR "data/problems/30.initial.json", false);
   ASSERT_TRUE(canvas);
   EXPECT_EQ(canvas->width, 400);
   EXPECT_EQ(canvas->height, 400);
