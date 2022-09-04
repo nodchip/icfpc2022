@@ -13,7 +13,7 @@ public:
 
     // problem 26~30 限定かも
 
-    auto canvas = args.canvas->Clone();
+    auto canvas = args.previous_canvas->Clone();
 
     // block id は 左下->右上, 列スキャン
     std::vector<std::shared_ptr<Instruction>> instructions;

@@ -6,7 +6,7 @@
 #include "interpreter.h"
 
 std::optional<CostBreakdown> executeInputSolution(const SolverArguments& args) {
-  return computeCost(*args.painting, args.canvas, args.optional_initial_solution);
+  return computeCost(*args.painting, args.initial_canvas, args.optional_initial_solution);
 }
 
 SolverBase::Ptr SolverRegistry::getSolver(std::string name) {
@@ -63,11 +63,11 @@ void SolverRegistry::displaySolvers() {
   }
 }
 
-SolverOutputs solve_with(const std::string& solver_name, PaintingPtr problem, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& initial_solution) {
+SolverOutputs solve_with(const std::string& solver_name, PaintingPtr problem, CanvasPtr initial_canvas, CanvasPtr previous_canvas, const std::vector<std::shared_ptr<Instruction>>& initial_solution) {
   CHECK(problem);
   auto solver = SolverRegistry::getSolver(solver_name);
   CHECK(solver);
-  SolverArguments args(problem, initial_canvas);
+  SolverArguments args(problem, initial_canvas, previous_canvas);
   args.optional_initial_solution = initial_solution;
   LOG(INFO) << fmt::format("solve_with({})..", solver_name);
   Timer t;

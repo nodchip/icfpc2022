@@ -30,7 +30,7 @@ public:
     const bool adjust_color = getOption<Option>()->adjust_color;
     LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color;
     SolverOutputs ret;
-    auto initial_canvas = args.canvas;
+    auto initial_canvas = args.initial_canvas;
     ret.solution = args.optional_initial_solution;
 
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ

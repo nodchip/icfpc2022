@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Total Cost : {}", cost->total);
     }
 
-    SolverArguments arg(problem, initial_canvas);
+    SolverArguments arg(problem, initial_canvas, initial_canvas);
     arg.optional_initial_solution = initial_solution;
     arg.visualize = visualize;
     if (timeout_s > 0) {
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
         return -1;
       }
-      LOG(ERROR) << fmt::format("Solver   : {} (starting with {} instructions and {} blocks)", solver_name, arg.optional_initial_solution.size(), arg.canvas->blocks.size());
+      LOG(ERROR) << fmt::format("Solver   : {} (starting with {} instructions and {} initial / {} previous blocks)", solver_name, arg.optional_initial_solution.size(), arg.initial_canvas->blocks.size(), arg.previous_canvas->blocks.size());
 
       const auto t0 = std::chrono::system_clock::now();
       out = solver->solve(arg);
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 
       // successive processing.
       arg.optional_initial_solution = out.solution;
-      arg.canvas = cost->canvas->Clone();
+      arg.previous_canvas = cost->canvas->Clone();
       ++phase;
     }
 

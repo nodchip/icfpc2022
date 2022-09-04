@@ -27,8 +27,8 @@ public:
 
   IntervalDPSolver3() { }
   SolverOutputs solve(const SolverArguments &args) override {
-    const auto top_level_id = std::to_string(args.canvas->calcTopLevelId());
-    assert(args.canvas->blocks[top_level_id]->size == args.canvas->size());
+    const auto top_level_id = std::to_string(args.previous_canvas->calcTopLevelId());
+    assert(args.previous_canvas->blocks[top_level_id]->size == args.previous_canvas->size());
     const int num_intervals = getOption<Option>()->num_intervals;
     const double prune_threshold = getOption<Option>()->prune_threshold;
     LOG(INFO) << "num_intervals = " << num_intervals;
