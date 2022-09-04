@@ -17,6 +17,8 @@ struct SimilarityChecker {
   //}
   // TODO?
 
+  static void Initialize();
+
   static double pixelDiff(const RGBA& p1, const RGBA& p2);
 
   static int imageDiff(const Frame& f1, const Frame& f2);

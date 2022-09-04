@@ -136,6 +136,8 @@ int main(int argc, char* argv[]) {
   std::ios::sync_with_stdio(false);
   std::cin.tie(NULL);
 
+  SimilarityChecker::Initialize();
+
   CLI::App app{ "main module" };
   app.require_subcommand(0, 1);
   bool list_solvers = false;
