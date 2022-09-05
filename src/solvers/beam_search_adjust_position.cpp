@@ -55,9 +55,7 @@ public:
         if (d != 0) deltas.push_back(d);
       }
     }
-    for (auto d : deltas) {
-      LOG(INFO) << "delta " << d;
-    }
+    //for (auto d : deltas) { LOG(INFO) << "delta " << d; }
 
     GeometricMedianColorCache geometric_median(*args.painting);
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ

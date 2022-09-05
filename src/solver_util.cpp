@@ -63,7 +63,7 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
   }
 
   if (cost_input && cost_opt && cost_opt->total < cost_input->total) {
-    LOG(INFO) << fmt::format("replaceColorInstructionOptimal: {} -> {}", cost_input->total, cost_opt->total);
+    //LOG(INFO) << fmt::format("replaceColorInstructionOptimal: {} -> {}", cost_input->total, cost_opt->total);
     return result;
   }
   // 誤差の影響でスコアが悪化することもあるので、その場合は何もしない
