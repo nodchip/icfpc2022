@@ -31,8 +31,8 @@ std::vector<std::shared_ptr<Instruction>> removeAdverseInstruction(GeometricMedi
         } catch (const InvalidInstructionException& e) {
           continue;
         }
-        LOG(INFO) << work[i]->toString() << " " << temp_cost << " " << current_cost;
         if (temp_cost < current_cost) {
+          LOG(INFO) << fmt::format("removed : \"{}\" {} -> {} (improved {})", work[i]->toString(), current_cost, temp_cost, current_cost - temp_cost);
           current_cost = temp_cost;
           work = temp;
           removed = true;
