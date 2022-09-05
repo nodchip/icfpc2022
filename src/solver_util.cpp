@@ -11,9 +11,9 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
   const RGBA white(255, 255, 255, 255);
   const RGBA marker(128, 128, 128, 128);
   auto work = instructions;
-  for (auto& inst : work) {
-    if (auto color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
-      color->color = white;
+  for (size_t i = 0; i < work.size(); ++i) {
+    if (auto color = std::dynamic_pointer_cast<ColorInstruction>(instructions[i])) {
+      work[i] = std::make_shared<ColorInstruction>(color->block_id, white);
     }
   }
 
@@ -63,6 +63,7 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
   }
 
   if (cost_input && cost_opt && cost_opt->total < cost_input->total) {
+    LOG(INFO) << fmt::format("replaceColorInstructionOptimal: {} -> {}", cost_input->total, cost_opt->total);
     return result;
   }
   // 誤差の影響でスコアが悪化することもあるので、その場合は何もしない
