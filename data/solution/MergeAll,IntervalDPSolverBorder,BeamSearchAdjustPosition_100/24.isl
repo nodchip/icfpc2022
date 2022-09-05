@@ -1,10 +1,11 @@
-# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\24.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\24.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=3 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=3 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color
-# git commit id : 56e877876c0fec8ed03308886122dfbc869ccd3f
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\24.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\24.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=2 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color --erase-background
+# git commit id : 107cb62f7ea8d3882fd0d27fbb85eea015b787bb
+# resolved problem : data\problems\24.txt
 # Solver     : MergeAll
 # Inst. Cost : 0 (0.00 %)
 #  Sim. Cost : 164587 (100.00 %)
 # Total Cost : 164587
-# Elapsed    : 1.7e-05 s
+# Elapsed    : 9.999999999999999e-06 s
 # cost = 17433
 # num_intervals = 100
 cut [0] [x] [292]
@@ -84,9 +85,9 @@ color [0.0.0.0.0.0.0.0.0.0.0.0.0.0] [184, 169, 142, 255]
 # Inst. Cost : 2961 (16.63 %)
 #  Sim. Cost : 14842 (83.37 %)
 # Total Cost : 17803
-# Elapsed    : 6471.3085599999995 s
+# Elapsed    : 9124.245883 s
 # Solver     : BeamSearchAdjustPosition
 # Inst. Cost : 2939 (16.63 %)
 #  Sim. Cost : 14733 (83.37 %)
 # Total Cost : 17672
-# Elapsed    : 1134.941899 s
+# Elapsed    : 1107.80187 s

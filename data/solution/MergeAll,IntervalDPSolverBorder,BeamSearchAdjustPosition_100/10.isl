@@ -1,10 +1,11 @@
-# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\10.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\10.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=3 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=3 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color
-# git commit id : 56e877876c0fec8ed03308886122dfbc869ccd3f
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\10.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\10.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=2 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color --erase-background
+# git commit id : 107cb62f7ea8d3882fd0d27fbb85eea015b787bb
+# resolved problem : data\problems\10.txt
 # Solver     : MergeAll
 # Inst. Cost : 0 (0.00 %)
 #  Sim. Cost : 210784 (100.00 %)
 # Total Cost : 210784
-# Elapsed    : 1.8e-05 s
+# Elapsed    : 9e-06 s
 # cost = 23338
 # num_intervals = 100
 cut [0] [x] [371]
@@ -88,9 +89,9 @@ color [0.0.0.0.0.0.0.1.0.0.0.0.0] [26, 35, 126, 255]
 # Inst. Cost : 5243 (22.32 %)
 #  Sim. Cost : 18247 (77.68 %)
 # Total Cost : 23490
-# Elapsed    : 7636.737239 s
+# Elapsed    : 9876.514941 s
 # Solver     : BeamSearchAdjustPosition
 # Inst. Cost : 5192 (22.24 %)
 #  Sim. Cost : 18154 (77.76 %)
 # Total Cost : 23346
-# Elapsed    : 1101.644676 s
+# Elapsed    : 1103.5861129999998 s

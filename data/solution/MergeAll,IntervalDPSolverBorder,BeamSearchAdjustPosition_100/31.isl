@@ -1,5 +1,6 @@
-# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\31.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\31.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=3 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=3 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color
-# git commit id : 56e877876c0fec8ed03308886122dfbc869ccd3f
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\31.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\31.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=2 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color --erase-background
+# git commit id : 107cb62f7ea8d3882fd0d27fbb85eea015b787bb
+# resolved problem : data\problems\31.txt
 merge [0] [1]
 merge [256] [2]
 merge [257] [3]
@@ -260,7 +261,7 @@ color [510] [255, 255, 255, 255]
 # Inst. Cost : 13641 (7.65 %)
 #  Sim. Cost : 164587 (92.35 %)
 # Total Cost : 178228
-# Elapsed    : 0.000249 s
+# Elapsed    : 0.000188 s
 # cost = 17433
 # num_intervals = 100
 cut [510] [x] [292]
@@ -340,9 +341,9 @@ color [510.0.0.0.0.0.0.0.0.0.0.0.0.0] [184, 169, 142, 255]
 # Inst. Cost : 16602 (52.80 %)
 #  Sim. Cost : 14842 (47.20 %)
 # Total Cost : 31444
-# Elapsed    : 8233.183747 s
+# Elapsed    : 9103.067782 s
 # Solver     : BeamSearchAdjustPosition
 # Inst. Cost : 16580 (52.95 %)
 #  Sim. Cost : 14733 (47.05 %)
 # Total Cost : 31313
-# Elapsed    : 2160.23523 s
+# Elapsed    : 2196.210139 s
