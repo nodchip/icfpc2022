@@ -3,10 +3,8 @@
 # resolved problem : C:/home/nodchip/icfpc2022/data/problems/2.txt
 # cost = 6350
 cut [0] [y] [50]
-color [0.1] [255, 255, 255, 255]
 cut [0.1] [269, 107]
 merge [0.1.2] [0.1.3]
-color [1] [255, 255, 255, 255]
 cut [1] [104, 145]
 merge [1.1] [1.2]
 color [2] [56, 182, 255, 255]
@@ -63,3 +61,5 @@ color [0.1.0.0.0.0] [255, 255, 255, 255]
 #  Sim. Cost : 3519 (55.42 %)
 # Total Cost : 6350
 # Elapsed    : 0.32930899999999996 s
+# Edited by hand
+# Total Cost : 6337
