@@ -288,6 +288,7 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<Painting> problem = loadProblem();
     std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
+    std::shared_ptr<Canvas> previous_canvas = initial_canvas;
     std::vector<std::shared_ptr<Instruction>> header = {
       std::make_shared<CommentInstruction>(fmt::format("command line  : {}", getArgString(argc, argv))),
       std::make_shared<CommentInstruction>(fmt::format("git commit id : {}", getCommitId())),
@@ -300,6 +301,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
         return -1;
       }
+      previous_canvas = cost->canvas;
       LOG(INFO) << fmt::format("-----------[ {} ]-----------", initial_solution_isl);
       LOG(INFO) << fmt::format("Inst. Cost : {} ({:.2f} %)", cost->instruction, 100.0 * cost->instruction / cost->total);
       LOG(INFO) << fmt::format(" Sim. Cost : {} ({:.2f} %)", cost->similarity, 100.0 * cost->similarity / cost->total);
@@ -307,7 +309,7 @@ int main(int argc, char* argv[]) {
       if (output_image) storeCanvasToFile(output_phase_file_path(0, ".png"), *cost->canvas, draw_border);
     }
 
-    SolverArguments arg(problem, initial_canvas, initial_canvas);
+    SolverArguments arg(problem, initial_canvas, previous_canvas);
     arg.optional_initial_solution = initial_solution;
     arg.visualize = visualize;
     if (timeout_s > 0) {
