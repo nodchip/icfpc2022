@@ -11,128 +11,205 @@
 
 class ReorderColor : public SolverBase {
   using BlockPtr = std::shared_ptr<Block>;
+  using Instructions = std::vector<std::shared_ptr<Instruction>>;
 
-  static bool CompareBlockSize(const BlockPtr& a, const BlockPtr& b) {
-    return a->size.px * a->size.py < b->size.px * b->size.py;
-  }
+  struct BlockInfo {
+    BlockInfo(BlockPtr b) : block(b), area(b->size.px * b->size.py) {}
+
+    BlockPtr block;
+    int area;
+    std::shared_ptr<ColorInstruction> color;
+    std::shared_ptr<Instruction> instruction;
+    std::vector<std::shared_ptr<BlockInfo>> children;
+    std::shared_ptr<BlockInfo> parent;
+
+    bool isFullyColored() const { return color || isIndirectlyColored(); }
+    bool isIndirectlyColored() const {
+      if (children.size() == 0)
+        return false;
+      for (auto&& child : children) {
+        if (!child->isFullyColored())
+          return false;
+      }
+      return true;
+    }
+  };
+  using IdBlockInfoMap = std::map<std::string, std::shared_ptr<BlockInfo>>;
+  using BlockInfos = std::vector<std::shared_ptr<BlockInfo>>;
 
  public:
   ReorderColor() = default;
 
   SolverOutputs solve(const SolverArguments& args) override {
-    LOG(INFO) << "Reorder";
     auto instructions = args.optional_initial_solution;
+    auto infos = BuildBlockInfoTree(args);
 
-    auto operands_ptr = std::make_shared<OperandMap>();
-    auto&& operands = *operands_ptr;
-    auto cost = computeCost(*args.painting, args.initial_canvas, instructions,
-                            operands_ptr);
-    if (!cost) {
-      LOG(ERROR) << fmt::format("failed to run the solution! terminating.");
-      return SolverOutputs();
-    }
-    auto canvas = cost->canvas;
-    // Make a list of all blocks
-    for (auto&& instruction : instructions) {
-      for (auto&& block : operands[instruction].input_blocks) {
-        canvas->blocks[block->id] = block;
-      }
-      for (auto&& block : operands[instruction].output_blocks) {
-        canvas->blocks[block->id] = block;
-      }
-    }
-
-    std::map<std::string, BlockPtr> colored_blocks;
-    for (auto&& instruction : instructions) {
-      auto color_instruction =
-          std::dynamic_pointer_cast<ColorInstruction>(instruction);
-      if (!color_instruction) {
-        continue;
-      }
-      auto&& id = color_instruction->block_id;
-      auto block = canvas->blocks[color_instruction->block_id];
-      assert(block);
-      colored_blocks[id] = block;
-    }
-
-    while (colored_blocks.size() > 0) {
-      auto child = FindSmallestBlock(colored_blocks);
-      auto&& id = child->id;
-      colored_blocks.erase(id);
-      if (id.find('.') == std::string::npos) {  // Root blocks
-        continue;
-      }
-      auto parent_id = id.substr(0, id.size() - 2);
-      if (colored_blocks.find(parent_id) != colored_blocks.end()) {
-        // If the parent block is colored, we can't pass the ColorInstruction to
-        // it.
-        continue;
-      }
-      std::shared_ptr<ColorInstruction> color_instruction;
-      // Erase a color instruction that colors `chlid` block.
-      for (int i = 0; i < instructions.size(); ++i) {
-        auto instruction =
-            std::dynamic_pointer_cast<ColorInstruction>(instructions[i]);
-        if (!instruction || instruction->block_id != id) {
-          continue;
-        }
-        color_instruction = instruction;
-        instructions.erase(instructions.begin() + i);
-      }
-      // Find a cut instruction that cuts the parent block, and inserts a color
-      // instruction before it.
-      for (int i = 0; i < instructions.size(); ++i) {
-        auto instruction = instructions[i];
-        if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(
-                instruction)) {
-          if (vcut->block_id != parent_id) {
-            continue;
-          }
-        } else if (auto hcut =
-                       std::dynamic_pointer_cast<HorizontalCutInstruction>(
-                           instruction)) {
-          if (hcut->block_id != parent_id) {
-            continue;
-          }
-        } else if (auto pcut = std::dynamic_pointer_cast<PointCutInstruction>(
-                       instruction)) {
-          if (pcut->block_id != parent_id) {
-            continue;
-          }
-        } else {
-          // Ignore other instruction
-          continue;
-        }
-
-        color_instruction->block_id = parent_id;
-        instructions.insert(instructions.begin() + i, color_instruction);
-        colored_blocks[parent_id] = canvas->blocks[parent_id];
-        break;
-      }
-    }
-
-    // TODO: Remove the first color [255,255,255,255] if it was not in input.
-
-    for (auto&& inst : instructions) {
-      LOG(INFO) << inst->toString();
+    while (MoveColorInstruction(infos)) {
+      /* Repeat while any updates happen */
     }
 
     SolverOutputs outputs;
-    outputs.solution = instructions;
+    outputs.solution = BuildInstructions(infos, instructions);
     return outputs;
   }
 
  private:
-  static BlockPtr FindSmallestBlock(
-      const std::map<std::string, BlockPtr>& colored_blocks) {
-    BlockPtr best = colored_blocks.begin()->second;
-    for (auto kv : colored_blocks) {
-      auto&& block = kv.second;
-      if (block->size.px * block->size.py < best->size.px * best->size.py) {
-        best = block;
+  static BlockInfos BuildBlockInfoTree(const SolverArguments& args) {
+    auto operands = std::make_shared<OperandMap>();
+    auto&& instructions = args.optional_initial_solution;
+    auto cost = computeCost(*args.painting, args.initial_canvas, instructions,
+                            operands);
+    if (!cost) {
+      return {};
+    }
+
+    std::map<std::string, std::shared_ptr<BlockInfo>> info_map;
+    auto& canvas = cost->canvas;
+    for (auto&& instruction : instructions) {
+      auto&& operand = (*operands)[instruction];
+      if (operand.input_blocks.size() != 1) {
+        // Do not process comments, merges, and swaps.
+        continue;
+      }
+      for (auto&& block : operand.input_blocks) {
+        if (info_map.find(block->id) == info_map.end()) {
+          info_map[block->id] = std::make_shared<BlockInfo>(block);
+        }
+      }
+      for (auto&& block : operand.output_blocks) {
+        if (info_map.find(block->id) == info_map.end()) {
+          info_map[block->id] = std::make_shared<BlockInfo>(block);
+        }
       }
     }
-    return best;
+
+    // Build relationships
+    for (auto&& instruction : instructions) {
+      auto&& operand = (*operands)[instruction];
+      if (operand.input_blocks.size() != 1) {
+        // Do not process comments, merges, and swaps.
+        continue;
+      }
+
+      auto&& input = operand.input_blocks[0];
+      auto&& info = info_map[input->id];
+      auto&& outputs = operand.output_blocks;
+      switch (outputs.size()) {
+        case 1:  // ColorInstruction
+          info->color =
+              std::dynamic_pointer_cast<ColorInstruction>(instruction);
+          assert(info->color);
+          break;
+        case 2:
+        case 4:
+          info->instruction = instruction;
+          for (auto&& output : outputs) {
+            auto&& child_info = info_map[output->id];
+            info->children.push_back(child_info);
+            child_info->parent = info;
+          }
+          break;
+        default:
+          LOG(INFO) << outputs.size() << " " << instruction->toString();
+          assert(false);
+          break;
+      }
+    }
+
+    BlockInfos infos;
+    for (auto&& kv : info_map) {
+      infos.push_back(kv.second);
+    }
+    std::sort(infos.begin(), infos.end(),
+              [](auto&& a, auto&& b) -> bool { return a->area < b->area; });
+    return infos;
+  }
+
+  static bool MoveColorInstruction(BlockInfos& infos) {
+    bool updated = false;
+    for (auto&& info : infos) {
+      if (!info->color) {
+        continue;
+      }
+      auto parent = info->parent;
+      if (!parent) {
+        continue;
+      }
+      if (parent->color) {
+        if (info->color == parent->color) {
+          info->color.reset();
+          updated = true;
+        }
+        continue;
+      }
+
+      auto siblings = parent->children;
+      bool is_others_fullfilled = true;
+      for (auto&& sibling : siblings) {
+        if (sibling == info) {
+          continue;
+        }
+        if (!sibling->isFullyColored()) {
+          is_others_fullfilled = false;
+          break;
+        }
+      }
+      if (is_others_fullfilled) {
+        parent->color = info->color;
+        info->color.reset();
+        parent->color->block_id = parent->block->id;
+        updated = true;
+      }
+    }
+    return updated;
+  }
+
+  static Instructions BuildInstructions(
+      const BlockInfos& infos,
+      const Instructions& initial_instructions) {
+    Instructions instructions;
+    for (auto&& inst : initial_instructions) {
+      if (std::dynamic_pointer_cast<ColorInstruction>(inst) ||
+          std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
+          std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
+          std::dynamic_pointer_cast<PointCutInstruction>(inst)) {
+        break;
+      }
+      instructions.push_back(inst);
+    }
+
+    BlockInfos stack{infos.back()};
+    assert(!stack[0]->parent);
+    while (!stack.empty()) {
+      auto&& info = stack.back();
+      stack.pop_back();
+      if (info->color) {
+        instructions.push_back(info->color);
+      }
+      if (info->instruction) {
+        instructions.push_back(info->instruction);
+      }
+      for (auto&& child : info->children) {
+        stack.push_back(child);
+      }
+    }
+
+    Instructions tail_instructions;
+    for (int i = initial_instructions.size() - 1; i >= 0; --i) {
+      auto&& inst = initial_instructions[i];
+      if (std::dynamic_pointer_cast<ColorInstruction>(inst) ||
+          std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
+          std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
+          std::dynamic_pointer_cast<PointCutInstruction>(inst)) {
+        break;
+      }
+      tail_instructions.push_back(inst);
+    }
+    for (int i = tail_instructions.size() - 1; i >= 0; --i) {
+      instructions.push_back(tail_instructions[i]);
+    }
+
+    return instructions;
   }
 };
 
