@@ -42,8 +42,14 @@ class ReorderColor : public SolverBase {
 
   SolverOutputs solve(const SolverArguments& args) override {
     auto instructions = args.optional_initial_solution;
-    auto infos = BuildBlockInfoTree(args);
+    if (!IsReordable(instructions)) {
+      LOG(INFO) << "This instruction set is not workable.";
+      SolverOutputs outputs;
+      outputs.solution = instructions;
+      return outputs;
+    }
 
+    auto infos = BuildBlockInfoTree(args);
     while (MoveColorInstruction(infos)) {
       /* Repeat while any updates happen */
     }
@@ -54,6 +60,40 @@ class ReorderColor : public SolverBase {
   }
 
  private:
+  static bool IsWorkableInstruction(std::shared_ptr<Instruction> inst) {
+    return std::dynamic_pointer_cast<ColorInstruction>(inst) ||
+           std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
+           std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
+           std::dynamic_pointer_cast<PointCutInstruction>(inst);
+  }
+
+  static bool IsReordable(const Instructions& instructions) {
+    int start_index = 0;
+    for (int i = 0; i < instructions.size(); ++i) {
+      if (IsWorkableInstruction(instructions[i])) {
+        start_index = i;
+        break;
+      }
+    }
+
+    int last_index = instructions.size();
+    for (int i = instructions.size() - 1; i >= 0; --i) {
+      if (IsWorkableInstruction(instructions[i])) {
+        last_index = i + 1;
+        break;
+      }
+    }
+
+    for (int i = start_index; i < last_index; ++i) {
+      if (!IsWorkableInstruction(instructions[i])) {
+        LOG(INFO) << "\"" << instructions[i]->toString() << "\" at " << i + 1
+                  << "th is not workable";
+        return false;
+      }
+    }
+    return true;
+  }
+
   static BlockInfos BuildBlockInfoTree(const SolverArguments& args) {
     auto operands = std::make_shared<OperandMap>();
     auto&& instructions = args.optional_initial_solution;
