@@ -141,7 +141,7 @@ public:
         // グリッドに沿った長方形を color move で平均色に塗ったときのコストを求める
         // move のコストと similarity のコストを両方足しておく
         // O(height * width * (HW)^2)
-        constexpr double kAlpha = 0.005;
+        constexpr double kAlpha = SimilarityChecker::alpha;
         auto colors = CreateVector<Color>(H, H + 1, W, W + 1, Color());
         auto color_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
         auto similarity_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
@@ -177,7 +177,7 @@ public:
               }
               similarity_costs[b][t][l][r] = kAlpha * cost;
               color_costs[b][t][l][r] = kAlpha * cost;
-              color_costs[b][t][l][r] += std::round(5.0 * multiplier);
+              color_costs[b][t][l][r] += std::round(ColorInstruction::kBaseCost * multiplier);
             }
           }
         }
@@ -194,9 +194,9 @@ public:
                         const int r = l + w;
                         auto& best_cost = best_costs[b][t][l][r];
                         best_cost = color_costs[b][t][l][r];
-                        const int point_cut_cost = std::round(10.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
-                        const int cut_cost = std::round(7.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
-                        const int color_cost = std::round(5.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+                        const int point_cut_cost = std::round(1.0 * PointCutInstruction::kBaseCost * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+                        const int cut_cost = std::round(1.0 * VerticalCutInstruction::kBaseCost * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
+                        const int color_cost = std::round(1.0 * ColorInstruction::kBaseCost * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
                         if (allow_point_cut) {
                             for (int my = b + 1; my < t; ++my) {
                                 for (int mx = l + 1; mx < r; ++mx) {
