@@ -266,7 +266,13 @@ struct SeekBarVisualizer {
       int c = cv::waitKey(15);
       if (c == 'b') draw_border_flag = !draw_border_flag;
       if (c == 'h') heatmap_flag = !heatmap_flag;
-      if (c == 27) break;
+      if (c == 27 /*ESC*/) break;
+      if (c == 2 /*left*/ || c == 3 /*right*/) {
+        const int min = 0;
+        const int max = canvas_list.size() - 1;
+        frame_id = std::clamp(frame_id + (c == 2 ? -1 : 1), min, max);
+        cv::setTrackbarPos("frame id", winname, frame_id);
+      }
       img = create_image();
       cv::imshow(winname, img);
     }
