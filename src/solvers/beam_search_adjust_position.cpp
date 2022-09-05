@@ -108,6 +108,21 @@ public:
         auto work = current_candidates.top().second;
         current_candidates.pop();
 
+        {
+          work = replaceColorInstructionOptimal(geometric_median, *args.painting, initial_canvas, work);
+          std::optional<CostBreakdown> cost_opt;
+          try {
+            cost_opt = computeCost(*args.painting, initial_canvas, work);
+          }
+          catch (const InvalidInstructionException& e) {
+          }
+          if (cost_opt && 0 < cost_opt->total && best_cost > cost_opt->total) {
+            best_cost = cost_opt->total;
+            best_inst = work;
+            best_cost_updated = true;
+          }
+        }
+
         for (size_t i = 0; i < work.size(); ++i) {
           //LOG(INFO) << fmt::format("i={}/{}({}%)", i, work.size(), 100.0 * i / work.size());
           if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(work[i])) {
