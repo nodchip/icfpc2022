@@ -132,6 +132,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(O
     <ClCompile Include="..\..\src\solvers\mean_color.cpp" />
     <ClCompile Include="..\..\src\solvers\merge_all.cpp" />
     <ClCompile Include="..\..\src\solvers\minimum_cost_maximum_flow.cpp" />
+    <ClCompile Include="..\..\src\solvers\color_optimizer.cpp" />
     <ClCompile Include="..\..\src\solvers\visualizer.cpp" />
     <ClCompile Include="..\..\src\solver_registry.cpp" />
     <ClCompile Include="..\..\src\solver_util.cpp" />
