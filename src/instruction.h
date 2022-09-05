@@ -26,6 +26,8 @@ struct Instruction {
   virtual ~Instruction() = default;
   virtual int getBaseCost() const { return 0; }
   virtual std::string toString() const;
+  virtual std::string GetBlockID() { return ""; }
+  virtual void SetBlockID(const std::string& name) { return; }
 };
 
 struct NopInstruction : public Instruction {
@@ -49,6 +51,8 @@ struct ColorInstruction : public Instruction {
   ColorInstruction(std::string block_id, Color color) : block_id(block_id), color(color) {}
   int getBaseCost() const override { return kBaseCost; }
   std::string toString() const override;
+  std::string GetBlockID() override { return block_id; }
+  virtual void SetBlockID(const std::string& name) { block_id = name; }
 };
 
 struct PointCutInstruction : public Instruction {
@@ -58,6 +62,8 @@ struct PointCutInstruction : public Instruction {
   PointCutInstruction(std::string block_id, Point point) : block_id(block_id), point(point) {}
   int getBaseCost() const override { return kBaseCost; }
   std::string toString() const override;
+  std::string GetBlockID() override { return block_id; }
+  virtual void SetBlockID(const std::string& name) { block_id = name; }
 };
 
 struct VerticalCutInstruction : public Instruction {
@@ -67,6 +73,8 @@ struct VerticalCutInstruction : public Instruction {
   VerticalCutInstruction(std::string block_id, int lineNumber) : block_id(block_id), lineNumber(lineNumber) {}
   int getBaseCost() const override { return kBaseCost; }
   std::string toString() const override;
+  std::string GetBlockID() override { return block_id; }
+  virtual void SetBlockID(const std::string& name) { block_id = name; }
 };
 
 struct HorizontalCutInstruction : public Instruction {
@@ -76,6 +84,8 @@ struct HorizontalCutInstruction : public Instruction {
   HorizontalCutInstruction(std::string block_id, int lineNumber) : block_id(block_id), lineNumber(lineNumber) {}
   int getBaseCost() const override { return kBaseCost; }
   std::string toString() const override;
+  std::string GetBlockID() override { return block_id; }
+  virtual void SetBlockID(const std::string& name) { block_id = name; }
 };
 
 struct SwapInstruction : public Instruction {
