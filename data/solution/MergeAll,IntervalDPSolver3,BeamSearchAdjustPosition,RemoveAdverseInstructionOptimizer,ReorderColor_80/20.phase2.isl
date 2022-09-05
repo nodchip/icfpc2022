@@ -1,0 +1,80 @@
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolver3,BeamSearchAdjustPosition,RemoveAdverseInstructionOptimizer,ReorderColor data\problems\20.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolver3,BeamSearchAdjustPosition,RemoveAdverseInstructionOptimizer,ReorderColor_80\20.isl --interval-dp-num-intervals=80 --interval-dp-2-num-intervals=80 --interval-dp-3-num-intervals=80 --interval-dp-3-num-threads=2 --interval-dp-3-allow-point-cut-merge=true --interval-dp-border-num-intervals=80 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=10 --beam-search-adjust-position-color --erase-background
+# git commit id : 35c3490fb8362dc08cd0abbb1fd6e5b2c2a783f4
+# resolved problem : data\problems\20.txt
+# Solver     : MergeAll
+# Inst. Cost : 0 (0.00 %)
+#  Sim. Cost : 135112 (100.00 %)
+# Total Cost : 135112
+# Elapsed    : 9e-06 s
+# cost = 18553
+# num_intervals = 80
+color [0] [95, 82, 86, 255]
+cut [0] [130, 25]
+merge [0.1] [0.2]
+color [1] [95, 83, 86, 255]
+cut [1] [270, 25]
+merge [1.3] [1.0]
+color [2] [67, 43, 49, 255]
+cut [2] [145, 70]
+merge [2.2] [2.3]
+color [3] [52, 42, 48, 255]
+cut [3] [185, 165]
+merge [3.2] [3.3]
+color [4] [207, 206, 200, 255]
+cut [4] [x] [265]
+color [4.0] [41, 33, 38, 255]
+cut [4.0] [y] [210]
+color [4.0.1] [205, 202, 201, 255]
+cut [4.0.1] [y] [225]
+color [4.0.1.1] [209, 206, 201, 255]
+cut [4.0.1.1] [x] [220]
+color [4.0.1.1.0] [64, 61, 45, 255]
+cut [4.0.1.1.0] [180, 300]
+merge [4.0.1.1.0.3] [4.0.1.1.0.0]
+color [5] [202, 200, 194, 255]
+color [4.0.1.1.0.2] [193, 193, 186, 255]
+color [3.1] [31, 25, 27, 255]
+color [2.1] [18, 16, 17, 255]
+color [1.2] [113, 100, 98, 255]
+cut [1.2] [y] [60]
+color [1.2.1] [187, 171, 149, 255]
+cut [1.2.1] [y] [70]
+color [1.2.1.1] [148, 164, 175, 255]
+cut [1.2.1.1] [y] [80]
+color [1.2.1.1.1] [164, 181, 196, 255]
+cut [1.2.1.1.1] [y] [115]
+color [1.2.1.1.1.1] [190, 199, 212, 255]
+cut [1.2.1.1.1.1] [y] [140]
+color [1.2.1.1.1.1.1] [232, 228, 223, 255]
+cut [1.2.1.1.1.1.1] [y] [180]
+color [1.2.1.1.1.1.1.1] [202, 201, 195, 255]
+cut [1.2.1.1.1.1.1.1] [x] [295]
+color [1.2.1.1.1.1.1.1.1] [193, 194, 187, 255]
+cut [1.2.1.1.1.1.1.1.1] [330, 270]
+merge [1.2.1.1.1.1.1.1.1.0] [1.2.1.1.1.1.1.1.1.1]
+color [6] [220, 216, 211, 255]
+color [1.2.1.1.1.1.1.1.1.2] [208, 206, 200, 255]
+color [0.3] [112, 99, 99, 255]
+cut [0.3] [y] [50]
+color [0.3.1] [130, 117, 109, 255]
+cut [0.3.1] [y] [60]
+color [0.3.1.1] [188, 172, 150, 255]
+cut [0.3.1.1] [y] [70]
+color [0.3.1.1.1] [147, 164, 176, 255]
+cut [0.3.1.1.1] [y] [90]
+color [0.3.1.1.1.1] [160, 176, 189, 255]
+cut [0.3.1.1.1.1] [y] [115]
+color [0.3.1.1.1.1.1] [183, 193, 207, 255]
+cut [0.3.1.1.1.1.1] [y] [130]
+color [0.3.1.1.1.1.1.1] [202, 208, 217, 255]
+cut [0.3.1.1.1.1.1.1] [y] [140]
+color [0.3.1.1.1.1.1.1.1] [208, 206, 200, 255]
+cut [0.3.1.1.1.1.1.1.1] [y] [350]
+color [0.3.1.1.1.1.1.1.1.0] [232, 228, 223, 255]
+cut [0.3.1.1.1.1.1.1.1.0] [y] [200]
+color [0.3.1.1.1.1.1.1.1.0.1] [204, 203, 197, 255]
+# Solver     : IntervalDPSolver3
+# Inst. Cost : 2233 (12.04 %)
+#  Sim. Cost : 16320 (87.96 %)
+# Total Cost : 18553
+# Elapsed    : 3797.647599 s
