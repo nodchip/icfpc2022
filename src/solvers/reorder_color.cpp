@@ -167,10 +167,18 @@ class ReorderColor : public SolverBase {
   static Instructions BuildInstructions(
       const BlockInfos& infos,
       const Instructions& initial_instructions) {
+    auto root = infos.back();
     Instructions instructions;
     for (auto&& inst : initial_instructions) {
-      if (std::dynamic_pointer_cast<ColorInstruction>(inst) ||
-          std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
+      if (auto&& color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
+        if (root->color && !(color->block_id == root->block->id &&
+                             color->color == root->color->color)) {
+          // If the root block is unintentionally colored, don't do it.
+          root->color.reset();
+        }
+        break;
+      }
+      if (std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
           std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
           std::dynamic_pointer_cast<PointCutInstruction>(inst)) {
         break;
