@@ -127,33 +127,26 @@ std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomL
     }
   }
 
-  auto weighted_average = [&colors](auto estimate, const auto& weights) {
-    std::array<double, 4> result = {0, 0, 0, 0};
-    double sum = 0.0;
-    for (size_t i = 0; i < colors.size(); ++i) {
-      result[0] += colors[i][0] * weights[i];
-      result[1] += colors[i][1] * weights[i];
-      result[2] += colors[i][2] * weights[i];
-      result[3] += colors[i][3] * weights[i];
-      sum += weights[i];
-    }
-    result[0] /= sum;
-    result[1] /= sum;
-    result[2] /= sum;
-    result[3] /= sum;
-    return result;
-  };
-  auto SQ = [](double x) { return x * x; };
-  auto dist_l2 = [SQ](const auto& x, const auto& y) {
-    return std::sqrt(SQ(x[0] - y[0]) + SQ(x[1] - y[1]) + SQ(x[2] - y[2]) + SQ(x[3] - y[3]));
-  };
-
-  std::vector<double> weights(N, 0.0);
   for (int iter = 0; iter < maxIter; ++iter) {
+    double sum_weights = 0.0;
+    std::array<double, 4> result = { 0, 0, 0, 0 };
     for (size_t i = 0; i < N; ++i) {
-      weights[i] = 1.0 / (dist_l2(colors[i], estimate) + 1e-6);
+      auto rDist = (colors[i][0] - estimate[0]) * (colors[i][0] - estimate[0]);
+      auto gDist = (colors[i][1] - estimate[1]) * (colors[i][1] - estimate[1]);
+      auto bDist = (colors[i][2] - estimate[2]) * (colors[i][2] - estimate[2]);
+      auto aDist = (colors[i][3] - estimate[3]) * (colors[i][3] - estimate[3]);
+      auto weight = 1.0 / std::sqrt(rDist + gDist + bDist + aDist + 1e-6);
+      result[0] += colors[i][0] * weight;
+      result[1] += colors[i][1] * weight;
+      result[2] += colors[i][2] * weight;
+      result[3] += colors[i][3] * weight;
+      sum_weights += weight;
     }
-    estimate = weighted_average(estimate, weights);
+    result[0] /= sum_weights;
+    result[1] /= sum_weights;
+    result[2] /= sum_weights;
+    result[3] /= sum_weights;
+    estimate = result;
   }
 
   const RGBA round_color(int(std::round(estimate[0])), int(std::round(estimate[1])), int(std::round(estimate[2])), int(std::round(estimate[3])));
