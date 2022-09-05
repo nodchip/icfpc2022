@@ -1,10 +1,11 @@
-# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\3.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\3.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=3 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=3 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color
-# git commit id : 56e877876c0fec8ed03308886122dfbc869ccd3f
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\3.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\3.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=2 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color --erase-background
+# git commit id : 107cb62f7ea8d3882fd0d27fbb85eea015b787bb
+# resolved problem : data\problems\3.txt
 # Solver     : MergeAll
 # Inst. Cost : 0 (0.00 %)
 #  Sim. Cost : 303416 (100.00 %)
 # Total Cost : 303416
-# Elapsed    : 1.8e-05 s
+# Elapsed    : 8e-06 s
 # cost = 21403
 # num_intervals = 100
 cut [0] [x] [323]
@@ -118,9 +119,9 @@ color [0.0.0.0.1.0.1.1.0.1.1.0] [0, 0, 0, 255]
 # Inst. Cost : 10245 (48.00 %)
 #  Sim. Cost : 11097 (52.00 %)
 # Total Cost : 21342
-# Elapsed    : 8041.378723 s
+# Elapsed    : 8492.280553999999 s
 # Solver     : BeamSearchAdjustPosition
 # Inst. Cost : 10284 (54.64 %)
 #  Sim. Cost : 8539 (45.36 %)
 # Total Cost : 18823
-# Elapsed    : 2481.880781 s
+# Elapsed    : 2578.0100319999997 s

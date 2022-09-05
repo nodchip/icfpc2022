@@ -1,5 +1,6 @@
-# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\30.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\30.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=3 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=3 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color
-# git commit id : 56e877876c0fec8ed03308886122dfbc869ccd3f
+# command line  : vs\x64\Release\solver.exe solve MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition data\problems\30.txt D:\hnoda\icfpc2022\data\solution\MergeAll,IntervalDPSolverBorder,BeamSearchAdjustPosition_100\30.isl --interval-dp-num-intervals=100 --interval-dp-2-num-intervals=100 --interval-dp-3-num-intervals=100 --interval-dp-3-num-threads=2 --interval-dp-border-num-intervals=100 --interval-dp-border-num-threads=2 --greedy-adjust-position-loop=100 --greedy-adjust-position-color --beam-search-adjust-position-loop=100 --beam-search-adjust-position-beam-width=100 --beam-search-adjust-position-color --erase-background
+# git commit id : 107cb62f7ea8d3882fd0d27fbb85eea015b787bb
+# resolved problem : data\problems\30.txt
 merge [0] [1]
 merge [400] [2]
 merge [401] [3]
@@ -404,7 +405,7 @@ color [798] [255, 255, 255, 255]
 # Inst. Cost : 28456 (10.78 %)
 #  Sim. Cost : 235480 (89.22 %)
 # Total Cost : 263936
-# Elapsed    : 0.000294 s
+# Elapsed    : 0.000348 s
 # cost = 31032
 # num_intervals = 100
 cut [798] [x] [347]
@@ -502,4 +503,4 @@ color [798.0.0.0.0.1] [158, 6, 3, 255]
 # Inst. Cost : 35453 (59.25 %)
 #  Sim. Cost : 24383 (40.75 %)
 # Total Cost : 59836
-# Elapsed    : 6648.758226 s
+# Elapsed    : 7688.435305999999 s
