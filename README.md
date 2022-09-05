@@ -20,7 +20,7 @@ bash build.sh
 
 ### GUI on WSL
 
-TODO(someone): Write this section.
+Set up X server on Windows. [This](https://til.swfz.io/entries/wsl2_with_x/) is an example reference. 
 
 ## Build (Visual Studio)
 
@@ -71,11 +71,13 @@ TODO(someone): Write this section.
 ```
 ./solver visualize ISL_FILE_PATH [PROBLEM_FILE_PATH]
 ```
-if one omits PROBLEM_FILE_PATH, it will be guessed from ISL_FILE_PATH name and its content.
+If one omits PROBLEM_FILE_PATH, it will be guessed from ISL_FILE_PATH name and its content.
 
 ## Manual solver
 
-TODO(someone): Write this section.
+```
+./solver solve Visualizer --manual 2
+```
 
 ## Apply a solver to all problems
 
