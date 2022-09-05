@@ -2,6 +2,7 @@
 #include "painter.h"
 #include <array>
 #include <cassert>
+#include <immintrin.h>
 #include <fmt/format.h>
 #include "similarity_checker.h"
 #include "lodepng.h"
