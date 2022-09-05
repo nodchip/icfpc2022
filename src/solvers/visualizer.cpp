@@ -72,6 +72,8 @@ struct ManualParams {
   };
 
   char inst_type = '1';
+  int selected_frame_id = -1;
+  std::string selected_block_id;
 
   std::string get_inst_name() const {
     return inst_name_map[inst_type - '0'];
@@ -107,16 +109,16 @@ struct SeekBarVisualizer {
     : painting(painting), manual(manual)
   {
     mp = std::make_shared<MouseParams>();
-    if (manual) {
-      LOG(INFO) << "create manual params";
-      mpp = std::make_shared<ManualParams>();
-    }
     interpreter.top_level_id_counter = initial_canvas->calcTopLevelId();
     instructions.push_back(std::make_shared<NopInstruction>());
     canvas_list.push_back(initial_canvas);
     auto res = computeCost(*painting, canvas_list.front()->Clone(), instructions);
     inst_cost_list.push_back(res->instruction);
     sim_cost_list.push_back(res->similarity);
+    if (manual) {
+      LOG(INFO) << "create manual params";
+      mpp = std::make_shared<ManualParams>();
+    }
   }
 
   void read_instruction(const std::shared_ptr<Instruction>& inst) {
@@ -347,7 +349,6 @@ struct SeekBarVisualizer {
   }
 
   void exec_color_inst() {
-    remove_successor_states();
     auto point = get_logical_mouse_position();
     auto canvas = canvas_list[frame_id];
     auto block = get_block(canvas, point);
@@ -367,44 +368,128 @@ struct SeekBarVisualizer {
     }
     LOG(INFO) << fmt::format("color change: {} -> {}", prev_color, std::to_string(opt_color));
     auto color_inst = std::make_shared<ColorInstruction>(block->id, opt_color);
+    remove_successor_states();
     read_instruction(color_inst);
     fit_frame_trackbar(true);
   }
 
   void exec_point_cut_inst() {
-    remove_successor_states();
     auto point = get_logical_mouse_position();
     auto canvas = canvas_list[frame_id];
     auto block = get_block(canvas, point);
     if (!block) return;
     if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
     auto point_inst = std::make_shared<PointCutInstruction>(block->id, point);
+    remove_successor_states();
     read_instruction(point_inst);
     fit_frame_trackbar(true);
   }
 
   void exec_vertical_cut_inst() {
-    remove_successor_states();
     auto point = get_logical_mouse_position();
     auto canvas = canvas_list[frame_id];
     auto block = get_block(canvas, point);
     if (!block) return;
     if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
     auto vertical_inst = std::make_shared<VerticalCutInstruction>(block->id, point.px);
+    remove_successor_states();
     read_instruction(vertical_inst);
     fit_frame_trackbar(true);
   }
 
   void exec_horizontal_cut_inst() {
-    remove_successor_states();
     auto point = get_logical_mouse_position();
     auto canvas = canvas_list[frame_id];
     auto block = get_block(canvas, point);
     if (!block) return;
     if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
     auto horizontal_inst = std::make_shared<HorizontalCutInstruction>(block->id, point.py);
+    remove_successor_states();
     read_instruction(horizontal_inst);
     fit_frame_trackbar(true);
+  }
+
+  void exec_swap_inst() {
+    if (mpp->selected_block_id.empty()) {
+      auto point = get_logical_mouse_position();
+      auto canvas = canvas_list[frame_id];
+      auto block = get_block(canvas, point);
+      if (!block) return;
+      mpp->selected_frame_id = frame_id;
+      mpp->selected_block_id = block->id;
+    }
+    else {
+      if (mpp->inst_type != '5' || mpp->selected_frame_id != frame_id) {
+        LOG(INFO) << "invalid operation";
+        mpp->inst_type = '0';
+        mpp->selected_block_id = "";
+        mpp->selected_frame_id = -1;
+        return;
+      }
+      auto point = get_logical_mouse_position();
+      auto canvas = canvas_list[frame_id];
+      auto block2 = get_block(canvas, point);
+      if (!block2 || mpp->selected_block_id == block2->id) return;
+      auto block1 = canvas->blocks[mpp->selected_block_id];
+      int dx1 = block1->topRight.px - block1->bottomLeft.px, dy1 = block1->topRight.py - block1->bottomLeft.py;
+      int dx2 = block2->topRight.px - block2->bottomLeft.px, dy2 = block2->topRight.py - block2->bottomLeft.py;
+      if (dx1 != dx2 || dy1 != dy2) {
+        LOG(INFO) << "invalid block size";
+        return;
+      }
+      auto swap_inst = std::make_shared<SwapInstruction>(mpp->selected_block_id, block2->id);
+      remove_successor_states();
+      read_instruction(swap_inst);
+      fit_frame_trackbar(true);
+      mpp->selected_block_id = "";
+      mpp->selected_frame_id = -1;
+    }
+  }
+
+  void exec_merge_inst() {
+    if (mpp->selected_block_id.empty()) {
+      auto point = get_logical_mouse_position();
+      auto canvas = canvas_list[frame_id];
+      auto block = get_block(canvas, point);
+      if (!block) return;
+      mpp->selected_frame_id = frame_id;
+      mpp->selected_block_id = block->id;
+    }
+    else {
+      if (mpp->inst_type != '6' || mpp->selected_frame_id != frame_id) {
+        LOG(INFO) << "invalid operation";
+        mpp->inst_type = '0';
+        mpp->selected_block_id = "";
+        mpp->selected_frame_id = -1;
+        return;
+      }
+      auto point = get_logical_mouse_position();
+      auto canvas = canvas_list[frame_id];
+      auto block2 = get_block(canvas, point);
+      if (!block2 || mpp->selected_block_id == block2->id) return;
+      auto block1 = canvas->blocks[mpp->selected_block_id];
+
+      const auto bottomToTop =
+        (block1->bottomLeft.py == block2->topRight.py || block1->topRight.py == block2->bottomLeft.py) &&
+        block1->bottomLeft.px == block2->bottomLeft.px &&
+        block1->topRight.px == block2->topRight.px;
+
+      const auto leftToRight =
+        (block1->bottomLeft.px == block2->topRight.px || block1->topRight.px == block2->bottomLeft.px) &&
+        block1->bottomLeft.py == block2->bottomLeft.py &&
+        block1->topRight.py == block2->topRight.py;
+
+      if (!bottomToTop && !leftToRight) {
+        LOG(INFO) << "invalid block size";
+        return;
+      }
+      auto merge_inst = std::make_shared<MergeInstruction>(mpp->selected_block_id, block2->id);
+      remove_successor_states();
+      read_instruction(merge_inst);
+      fit_frame_trackbar(true);
+      mpp->selected_block_id = "";
+      mpp->selected_frame_id = -1;
+    }
   }
 
   void exec_mouse_action() {
@@ -426,8 +511,12 @@ struct SeekBarVisualizer {
       case '4': // Horizontal
         exec_horizontal_cut_inst();
         break;
-      case '5':
-      case '6':
+      case '5': // Swap TODO: 適当すぎ
+        exec_swap_inst();
+        break;
+      case '6': // Merge
+        exec_merge_inst();
+        break;
       default:
         break;
       }
