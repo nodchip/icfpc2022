@@ -39,7 +39,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp instruction_cost_calculator.cpp interpreter.cpp painter.cpp parser.cpp point.cpp similarity_checker.cpp solver_registry.cpp string_util.cpp random_instruction_generator.cpp xorshift.cpp
+SRCS+=block.cpp canvas.cpp color.cpp instruction.cpp instruction_cost_calculator.cpp interpreter.cpp painter.cpp parser.cpp point.cpp similarity_checker.cpp solver_registry.cpp solver_util.cpp string_util.cpp random_instruction_generator.cpp xorshift.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 

@@ -6,51 +6,7 @@
 #include "instruction.h"
 #include "interpreter.h"
 #include "painter.h"
-
-// instructionsの全colorを最終的な最適値に置換する
-static std::vector<std::shared_ptr<Instruction>> replaceToOptimalColorInstruction(GeometricMedianColorCache& cache, Painting& painting, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
-  auto result = instructions;
-
-  const RGBA white(255, 255, 255, 255);
-  const RGBA marker(0, 0, 0, 0);
-  auto white_instructions = instructions;
-  for (auto& inst : white_instructions) {
-    if (auto color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
-      color->color = white;
-    }
-  }
-
-  for (int i = 0; i < instructions.size(); ++i) {
-    if (auto col = std::dynamic_pointer_cast<ColorInstruction>(instructions[i])) {
-      // このcolorの最終的な描画先を探す
-      auto work = white_instructions;
-      work[i] = std::make_shared<ColorInstruction>(col->block_id, marker);
-      // 各color命令が最終的に一つのSimpleBlockと仮定している(ソルバーによっては成立しない)
-      Point bottomLeft(0, 0), topRight(0, 0);
-      {
-        auto canvas = computeCost(painting, initial_canvas, work)->canvas;
-        assert(canvas);
-        for (const auto& [_, block] : canvas->blocks) {
-          if (auto simple_block = std::dynamic_pointer_cast<SimpleBlock>(block)) {
-            if (simple_block->color == marker) {
-              bottomLeft = simple_block->bottomLeft;
-              topRight = simple_block->topRight;
-              break;
-            }
-          }
-        }
-      }
-      if (bottomLeft != topRight) {
-        auto color = cache.getColor(bottomLeft, topRight);
-        if (color) {
-          auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
-          result[i] = new_col;
-        }
-      }
-    }
-  }
-  return result;
-}
+#include "solver_util.h"
 
 class BeamSearchAdjustPosition : public SolverBase {
 public:
@@ -105,7 +61,7 @@ public:
       std::vector<std::shared_ptr<Instruction>> work_opt = work;
       if (optimal_color && is_cut) {
         // 全てのcolorコマンドを最適に設定したと仮定した際のコストに更新
-        work_opt = replaceToOptimalColorInstruction(geometric_median, *args.painting, initial_canvas, work);
+        work_opt = replaceColorInstructionOptimal(geometric_median, *args.painting, initial_canvas, work);
         std::optional<CostBreakdown> cost_opt; try { 
           cost_opt = computeCost(*args.painting, initial_canvas, work_opt);
         } catch (const InvalidInstructionException& e) {

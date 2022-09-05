@@ -106,6 +106,7 @@
     <ClCompile Include="..\..\src\point.cpp" />
     <ClCompile Include="..\..\src\random_instruction_generator.cpp" />
     <ClCompile Include="..\..\src\similarity_checker.cpp" />
+    <ClCompile Include="..\..\src\solver_util.cpp" />
     <ClCompile Include="..\..\src\string_util.cpp" />
     <ClCompile Include="..\..\src\tests\test_canvas.cpp" />
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="..\..\src\point.h" />
     <ClInclude Include="..\..\src\random_instruction_generator.h" />
     <ClInclude Include="..\..\src\similarity_checker.h" />
+    <ClInclude Include="..\..\src\solver_util.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\string_util.h" />
     <ClInclude Include="..\..\src\xorshift.h" />
