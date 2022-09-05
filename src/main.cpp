@@ -48,28 +48,32 @@ std::string getCommitId() {
   return "NA";
 }
 
-std::optional<std::filesystem::path> guessProblemFile(std::string isl_file_path) {
 #ifdef _WIN32
-  // cwd is vs/x64/Release or vs/
-  std::vector<std::string> base_dir_candidates = {"..\\..\\..\\data\\problems", "..\\data\\problems"};
+const std::vector<std::string> base_dir_candidates = {
+  "..\\..\\..", // ./vs/x64/Release
+  "..", // ./vs
+};
 #else
-  // cwd is src/
-  std::vector<std::string> base_dir_candidates = {"../data/problems"};
+const std::vector<std::string> base_dir_candidates = {
+  "..", // ./src
+};
 #endif
 
-  auto find_pid_problem = [&](int pid) -> std::optional<std::filesystem::path> {
-    for (auto base_dir : base_dir_candidates) {
-      if (std::filesystem::exists(std::filesystem::path(base_dir) / fmt::format("{}.txt", pid))) {
-        return std::filesystem::path(base_dir) / fmt::format("{}.txt", pid);
-      }
+std::optional<std::filesystem::path> guessProblemFile(int pid) {
+  for (auto base_dir : base_dir_candidates) {
+    auto path = std::filesystem::path(base_dir) / "data" / "problems" / fmt::format("{}.txt", pid);
+    if (std::filesystem::exists(path)) {
+      return path;
     }
-    return std::nullopt;
-  };
+  }
+  return std::nullopt;
+}
 
+std::optional<std::filesystem::path> guessProblemFile(std::string isl_file_path) {
   // 数字で始まる場合は, それがPID
   try {
     const int pid = std::stoi(std::filesystem::path(isl_file_path).filename().string());
-    if (auto path = find_pid_problem(pid)) {
+    if (auto path = guessProblemFile(pid)) {
       LOG(INFO) << "Guessed problem file: " << path->string();
       return *path;
     }
@@ -78,22 +82,30 @@ std::optional<std::filesystem::path> guessProblemFile(std::string isl_file_path)
 
   // 中身を見て以下のような行から探す
   // # command line  : solver.exe solve Merge,RemoveMergedColor,IntervalDPSolverBorder,Greedy ..\..\..\data\problems\30.txt --greedy-adjust-position-color
-  {
+  auto find_from_comment = [&](std::regex re) -> std::optional<std::filesystem::path> {
     std::ifstream ifs(isl_file_path);
     std::string line;
-    std::regex re(R"(^# command line.*?(\d+)\.txt.*?)");
     while (std::getline(ifs, line)) {
       std::smatch m;
       if (std::regex_match(line, m, re)) {
         try {
           const int pid = std::stoi(m[1].str());
-          if (auto path = find_pid_problem(pid)) {
+          if (auto path = guessProblemFile(pid)) {
             LOG(INFO) << "Guessed problem file: " << path->string();
-            return *path;
+            return path;
           }
         } catch (const std::invalid_argument&) {
         }
       }
+    }
+    return std::nullopt;
+  };
+
+  for (auto re : {
+    std::regex(R"(^# resolved problem.*?(\d+)\.txt.*?)"),
+    std::regex(R"(^# command line.*?(\d+)\.txt.*?)")}) {
+    if (auto path = find_from_comment(re)) {
+      return *path;
     }
   }
 
@@ -269,6 +281,21 @@ int main(int argc, char* argv[]) {
   }
 
   if (sub_solve->parsed()) {
+    if (!std::filesystem::exists(problem_file)) {
+      try {
+        if (auto path = guessProblemFile(std::stoi(problem_file))) {
+          problem_file = path->string();
+        }
+      } catch (const std::invalid_argument&) {
+      }
+      if (std::filesystem::exists(problem_file)) {
+        LOG(ERROR) << fmt::format("guessed problem file location : {}", problem_file);
+      } else {
+        LOG(ERROR) << fmt::format("failed to guess problem file from \"{}\"", problem_file);
+        return -1;
+      }
+    }
+
     std::vector<std::string> solver_name_list;
     for (auto solver_name : split(solver_names, ',')) {
       solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
@@ -292,6 +319,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<Instruction>> header = {
       std::make_shared<CommentInstruction>(fmt::format("command line  : {}", getArgString(argc, argv))),
       std::make_shared<CommentInstruction>(fmt::format("git commit id : {}", getCommitId())),
+      std::make_shared<CommentInstruction>(fmt::format("resolved problem : {}", problem_file)),
     };
 
     std::vector<std::shared_ptr<Instruction>> initial_solution = loadSolution(*problem);
