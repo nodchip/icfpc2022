@@ -5,8 +5,6 @@
 
 struct EdgeDetect {
   PaintingPtr painting;
-  int maximum_tick_size;
-  int minimum_interval;
   cv::Mat color[4];
   cv::Mat after_process[4];
   cv::Mat after_soberX[4];
@@ -15,9 +13,9 @@ struct EdgeDetect {
 
 
   void process(int i);
-  EdgeDetect(PaintingPtr painting_, int tick_size_ = 20, int minimum_interval_ = 7);
-  std::vector<int> YTicks(bool sort = true);
-  std::vector<int> XTicks(bool sort = true);;
+  EdgeDetect(PaintingPtr painting_);
+  std::vector<int> YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true);
+  std::vector<int> XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true);;
   void Show();
 };
 

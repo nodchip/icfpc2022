@@ -7,7 +7,7 @@ void EdgeDetect::process(int i) {
   cv::Sobel(after_process[i], after_soberY[i], -1, 0, 1);
 }
 
-EdgeDetect::EdgeDetect(PaintingPtr painting_, int tick_size_ , int minimum_interval_) : painting(painting_), maximum_tick_size(tick_size_), minimum_interval(minimum_interval_) {
+EdgeDetect::EdgeDetect(PaintingPtr painting_) : painting(painting_) {
   border_mapX = cv::Mat::zeros(painting->width, painting->height, CV_8UC1);
   border_mapY = cv::Mat::zeros(painting->width, painting->height, CV_8UC1);
   auto interpret = [&](int i) {
@@ -30,35 +30,36 @@ EdgeDetect::EdgeDetect(PaintingPtr painting_, int tick_size_ , int minimum_inter
   }
 }
 
-std::vector<int> EdgeDetect::YTicks(bool sort) {
+std::vector<int> EdgeDetect::YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) {
   std::vector<std::pair<int, int>> tmp;
-  for (int y = 0; y < painting->height; ++y) {
+  for (int y = bottomLeft.py; y < topRight.py; ++y) {
     int counter = 0;
-    for (int x = 0; x < painting->width; ++x) {
+    for (int x = bottomLeft.px; x < topRight.px; ++x) {
       counter += border_mapX.at<uchar>(x, y);
     }
     tmp.push_back(std::make_pair(counter, y));
   }
   std::sort(tmp.begin(), tmp.end());
   std::reverse(tmp.begin(), tmp.end());
-  std::vector<int> ret;
   std::vector<bool> used(painting->height, false);
+  std::vector<int> ret = { bottomLeft.py, topRight.py };
+  for (auto p : ret) for (int j = std::max(int(bottomLeft.py), p - minimum_interval); j <= std::min(topRight.py - 1, p + minimum_interval); ++j) used[j] = true;
   for (int i = 0; i < tmp.size(); ++i) {
     auto p = tmp[i].second;
     if (used[p]) continue;
     ret.push_back(p);
-    for (int j = std::max(int(0), p - minimum_interval); j < std::min(painting->height, p + minimum_interval); ++j) used[j] = true;
+    for (int j = std::max(int(bottomLeft.py), p - minimum_interval); j <= std::min(topRight.py - 1, p + minimum_interval); ++j) used[j] = true;
     if (ret.size() >= maximum_tick_size) break;
   }
   if (sort) std::sort(ret.begin(), ret.end());
   return ret;
 }
 
-std::vector<int> EdgeDetect::XTicks(bool sort) {
+std::vector<int> EdgeDetect::XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) {
   std::vector<std::pair<int, int>> tmp;
-  for (int x = 0; x < painting->width; ++x) {
+  for (int x = bottomLeft.px; x < topRight.px; ++x) {
     int counter = 0;
-    for (int y = 0; y < painting->height; ++y) {
+    for (int y = bottomLeft.py; y < topRight.py; ++y) {
       counter += border_mapY.at<uchar>(x, y);
     }
     tmp.push_back(std::make_pair(counter, x));
@@ -66,12 +67,14 @@ std::vector<int> EdgeDetect::XTicks(bool sort) {
   std::sort(tmp.begin(), tmp.end());
   std::reverse(tmp.begin(), tmp.end());
   std::vector<bool> used(painting->height, false);
-  std::vector<int> ret;
+  
+  std::vector<int> ret = {bottomLeft.px, topRight.px};
+  for(auto p: ret) for (int j = std::max(int(bottomLeft.px), p - minimum_interval); j <= std::min(topRight.px - 1, p + minimum_interval); ++j) used[j] = true;
   for (int i = 0; i < tmp.size(); ++i) {
     auto p = tmp[i].second;
     if (used[p]) continue;
     ret.push_back(p);
-    for (int j = std::max(int(0), p - minimum_interval); j < std::min(painting->width, p + minimum_interval); ++j) used[j] = true;
+    for (int j = std::max(int(bottomLeft.px), p - minimum_interval); j <= std::min(topRight.px - 1, p + minimum_interval); ++j) used[j] = true;
     if (ret.size() >= maximum_tick_size) break;
   }
   if (sort) std::sort(ret.begin(), ret.end());
@@ -87,8 +90,8 @@ void EdgeDetect::Show() {
   auto RED = cv::Scalar(0, 0, 255);
   auto GREEN = cv::Scalar(0, 255, 0);
   auto BLUE = cv::Scalar(255, 0, 0);
-  for (auto e : YTicks()) cv::line(debug, cv::Point(e, 0), cv::Point(e, 400), BLUE, 1);
-  for (auto e : XTicks()) cv::line(debug, cv::Point(0, e), cv::Point(400, e), GREEN, 1);
+  //for (auto e : YTicks()) cv::line(debug, cv::Point(e, 0), cv::Point(e, 400), BLUE, 1);
+  //for (auto e : XTicks()) cv::line(debug, cv::Point(0, e), cv::Point(400, e), GREEN, 1);
   cv::imshow("borderX", border_mapX);
   cv::imshow("borderY", border_mapY);
   cv::imshow("debug", debug);

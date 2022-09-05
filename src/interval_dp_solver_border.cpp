@@ -130,9 +130,12 @@ public:
             xticks.insert(xticks.end(), xticks_set.begin(), xticks_set.end());
         }
         else {
-            auto edge = EdgeDetect(args.painting, num_intervals / 0.75, (args.painting->height/num_intervals) * 0.75);
-            xticks = edge.XTicks();
-            yticks = edge.YTicks();
+
+          auto edge = EdgeDetect(args.painting);
+          Point bottomLeft = Point(0, 0);
+          Point topRight = Point(width, height);
+          xticks = edge.XTicks(bottomLeft, topRight, width * 0.75 / num_intervals, num_intervals);
+          yticks = edge.YTicks(bottomLeft, topRight, height * 0.75 / num_intervals, num_intervals);;
         }
         const int H = yticks.size() - 1;
         const int W = xticks.size() - 1;
