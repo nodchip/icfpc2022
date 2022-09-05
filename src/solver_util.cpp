@@ -9,9 +9,9 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
   auto result = instructions;
 
   const RGBA white(255, 255, 255, 255);
-  const RGBA marker(0, 0, 0, 0);
-  auto white_instructions = instructions;
-  for (auto& inst : white_instructions) {
+  const RGBA marker(128, 128, 128, 128);
+  auto work = instructions;
+  for (auto& inst : work) {
     if (auto color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
       color->color = white;
     }
@@ -20,10 +20,9 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
   for (int i = 0; i < instructions.size(); ++i) {
     if (auto col = std::dynamic_pointer_cast<ColorInstruction>(instructions[i])) {
       // このcolorの最終的な描画先を探す
-      auto work = white_instructions;
       work[i] = std::make_shared<ColorInstruction>(col->block_id, marker);
-      // 各color命令が最終的に一つのSimpleBlockと仮定している(ソルバーによっては成立しない)
       Point bottomLeft(0, 0), topRight(0, 0);
+      int found = 0;
       {
         auto canvas = computeCost(painting, initial_canvas, work)->canvas;
         assert(canvas);
@@ -32,11 +31,12 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
             if (simple_block->color == marker) {
               bottomLeft = simple_block->bottomLeft;
               topRight = simple_block->topRight;
-              break;
+              ++found;
             }
           }
         }
       }
+      assert(found <= 1); // 各color命令が最終的に一つのSimpleBlockと仮定している(ソルバーによっては成立しない)
       if (bottomLeft != topRight) {
         auto color = cache.getColor(bottomLeft, topRight);
         if (color) {
@@ -44,7 +44,27 @@ std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(Geometr
           result[i] = new_col;
         }
       }
+      work[i] = col;
     }
   }
-  return result;
+
+  std::optional<CostBreakdown> cost_input;
+  try { 
+    cost_input = computeCost(painting, initial_canvas, instructions);
+  } catch (const InvalidInstructionException& e) {
+    return instructions;
+  }
+
+  std::optional<CostBreakdown> cost_opt;
+  try { 
+    cost_opt = computeCost(painting, initial_canvas, result);
+  } catch (const InvalidInstructionException& e) {
+    return instructions;
+  }
+
+  if (cost_input && cost_opt && cost_opt->total < cost_input->total) {
+    return result;
+  }
+  // 誤差の影響でスコアが悪化することもあるので、その場合は何もしない
+  return instructions;
 }

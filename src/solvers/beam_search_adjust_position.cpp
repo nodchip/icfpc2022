@@ -62,7 +62,8 @@ public:
       if (optimal_color && is_cut) {
         // 全てのcolorコマンドを最適に設定したと仮定した際のコストに更新
         work_opt = replaceColorInstructionOptimal(geometric_median, *args.painting, initial_canvas, work);
-        std::optional<CostBreakdown> cost_opt; try { 
+        std::optional<CostBreakdown> cost_opt;
+        try { 
           cost_opt = computeCost(*args.painting, initial_canvas, work_opt);
         } catch (const InvalidInstructionException& e) {
           return false;

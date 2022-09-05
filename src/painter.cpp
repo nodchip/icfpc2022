@@ -348,7 +348,7 @@ std::optional<RGBA> GeometricMedianColorCache::getColor(Point bottomLeft, Point 
   std::optional<RGBA> color;
   if (it == cache.end()) {
     ++miss_count;
-    color = geometricMedianColor(painting, bottomLeft, topRight, true);
+    color = geometricMedianColor(painting, bottomLeft, topRight, false);
     cache.insert({key, color});
   } else {
     ++hit_count;

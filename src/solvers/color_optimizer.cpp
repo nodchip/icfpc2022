@@ -8,7 +8,8 @@
 
 // オプティマイザ.
 // 入力命令列を処理して新命令列を返す:
-//   入力color命令の位置やblock idは変えずに、colorだけを変えて良い場合に最適な命令列を生成する
+//   入力color命令の位置やblock idは変えずに、colorだけを変えて良い場合に最適な命令列を生成しようとする
+//   誤差の影響で悪化する場合は何もしない
 class ColorOptimizer : public SolverBase {
 public:
   struct Option : public OptionBase {
