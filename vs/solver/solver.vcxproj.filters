@@ -123,10 +123,11 @@
     <ClCompile Include="..\..\src\solvers\reorder_color.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\solvers\random_cut_solver.cpp">
+    <ClCompile Include="..\..\src\solvers\interval_dp_solver_border2.cpp">
       <Filter>ソース ファイル\solvers</Filter>
-    </ClCompile>
-  </ItemGroup>
+    </ClCompile>    <ClCompile Include="..\..\src\solvers\random_cut_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>  </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
