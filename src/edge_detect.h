@@ -14,8 +14,8 @@ struct EdgeDetect {
 
   void process(int i);
   EdgeDetect(PaintingPtr painting_);
-  std::vector<int> YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true);
-  std::vector<int> XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true);;
+  std::vector<int> YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true)const;
+  std::vector<int> XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort = true)const;
   void Show();
 };
 

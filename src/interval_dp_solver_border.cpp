@@ -8,7 +8,6 @@
 #include "instruction_cost_calculator.h"
 #include "similarity_checker.h";
 #include <opencv2/opencv.hpp>
-#include <ppl.h>
 #include <omp.h>
 #include "edge_detect.h"
 

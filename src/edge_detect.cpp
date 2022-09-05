@@ -30,7 +30,7 @@ EdgeDetect::EdgeDetect(PaintingPtr painting_) : painting(painting_) {
   }
 }
 
-std::vector<int> EdgeDetect::YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) {
+std::vector<int> EdgeDetect::YTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) const {
   std::vector<std::pair<int, int>> tmp;
   for (int y = bottomLeft.py; y < topRight.py; ++y) {
     int counter = 0;
@@ -55,7 +55,7 @@ std::vector<int> EdgeDetect::YTicks(const Point& bottomLeft, const Point& topRig
   return ret;
 }
 
-std::vector<int> EdgeDetect::XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) {
+std::vector<int> EdgeDetect::XTicks(const Point& bottomLeft, const Point& topRight, int minimum_interval, int maximum_tick_size, bool sort) const {
   std::vector<std::pair<int, int>> tmp;
   for (int x = bottomLeft.px; x < topRight.px; ++x) {
     int counter = 0;
