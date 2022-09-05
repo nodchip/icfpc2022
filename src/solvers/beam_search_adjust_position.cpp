@@ -47,7 +47,18 @@ public:
     std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>> current_candidates;
     current_candidates.push(std::make_pair(std::numeric_limits<int>::max(), ret.solution));
     int best_cost = std::numeric_limits<int>::max();
-    std::vector<std::shared_ptr<Instruction>> best_inst;
+    {
+      std::optional<CostBreakdown> cost_opt;
+      try {
+        cost_opt = computeCost(*args.painting, initial_canvas, ret.solution);
+      }
+      catch (const InvalidInstructionException& e) {
+      }
+      if (cost_opt && 0 < cost_opt->total) {
+        best_cost = cost_opt->total;
+      }
+    }
+    std::vector<std::shared_ptr<Instruction>> best_inst = ret.solution;
     bool best_cost_updated = true;
     auto try_update = [&](std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>>& next_candidates, const std::vector<std::shared_ptr<Instruction>>& work, bool is_cut, int i, const std::string& tag) {
       std::optional<CostBreakdown> cost;
