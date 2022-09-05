@@ -25,8 +25,8 @@ int SimilarityChecker::imageDiff(const Frame& f1, const Frame& f2) {
   int i = 0;
   __m256d diff_pd = _mm256_setzero_pd();
   for (; i + 8 <= f1.size(); i += 8) {
-    __m256i f1_u8 = *(__m256i*)(&f1[i]);
-    __m256i f2_u8 = *(__m256i*)(&f2[i]);
+    __m256i f1_u8 = _mm256_load_si256((__m256i*)&f1[i]);
+    __m256i f2_u8 = _mm256_load_si256((__m256i*)&f2[i]);
 
     // uint8_t -> int16_t
     __m256i f1_lo_i16 = _mm256_cvtepu8_epi16(_mm256_extracti128_si256(f1_u8, 0));

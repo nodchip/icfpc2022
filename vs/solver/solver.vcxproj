@@ -147,6 +147,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world460.* $(O
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\lodepng\lodepng.h" />
+    <ClInclude Include="..\..\src\aligned_allocator.h" />
     <ClInclude Include="..\..\src\block.h" />
     <ClInclude Include="..\..\src\canvas.h" />
     <ClInclude Include="..\..\src\color.h" />

@@ -2,11 +2,13 @@
 #include <vector>
 #include <optional>
 
+#include "aligned_allocator.h"
 #include "color.h"
 #include "canvas.h"
 #include "point.h"
 
-using Frame = std::vector<RGBA>;
+// AVX2対応のため、32バイトにアラインする。
+using Frame = std::vector<RGBA, AlignedAllocator<RGBA, 32>>;
 
 struct Painter {
 
