@@ -19,6 +19,7 @@ struct SolverArguments {
   CanvasPtr previous_canvas;
   std::vector<std::shared_ptr<Instruction>> optional_initial_solution;
 
+  std::optional<std::filesystem::path> problem_file_path;
   std::optional<double> timeout_s;
   std::optional<unsigned int> random_seed;
 };

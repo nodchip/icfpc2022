@@ -331,6 +331,7 @@ int main(int argc, char* argv[]) {
     }
 
     SolverArguments arg(problem, initial_canvas, previous_canvas);
+    arg.problem_file_path = problem_file;
     arg.optional_initial_solution = initial_solution;
     if (timeout_s > 0) {
       arg.timeout_s = timeout_s;
@@ -450,6 +451,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<Canvas> initial_canvas = loadInitialConfiguration(problem);
 
     SolverArguments arg(problem, initial_canvas, initial_canvas);
+    arg.problem_file_path = problem_file;
     arg.optional_initial_solution = loadSolution(*problem);
     if (timeout_s > 0) {
       arg.timeout_s = timeout_s;
