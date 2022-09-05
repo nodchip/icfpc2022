@@ -16,6 +16,7 @@ public:
     bool verbose = false;
     bool adjust_color = false; // あまり効かない(少なくともIntervalDPSolver3に対して)
     bool optimal_color = false; // かなり重い. cutを動かす際の評価値として、cutを動かした上で最終的なスコアの意味で全colorを最適値に設定した値を用いる. これを用いる場合は多分adjust_colorは不要になる。
+    bool power_delta = false; // ±1, ±2, ±4, ±8, .. 以外のdeltaを使わない
     int beam_width = 10;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--beam-search-adjust-position-loop", loop);
@@ -24,6 +25,7 @@ public:
       app->add_flag("--beam-search-adjust-position-verbose", verbose);
       app->add_flag("--beam-search-adjust-position-color", adjust_color);
       app->add_flag("--beam-search-adjust-position-optimal-color", optimal_color);
+      app->add_flag("--beam-search-adjust-position-power-delta", power_delta);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -35,11 +37,27 @@ public:
     const bool verbose = getOption<Option>()->verbose;
     const bool adjust_color = getOption<Option>()->adjust_color;
     const bool optimal_color = getOption<Option>()->optimal_color;
+    const bool power_delta = getOption<Option>()->power_delta;
     const int beam_width = getOption<Option>()->beam_width;
-    LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color << " optimal_clor = " << optimal_color << " beam_width=" << beam_width;
+    LOG(INFO) << "delta = " << delta << " power_delta = " << power_delta << " loop = " << loop << " color = " << adjust_color << " optimal_clor = " << optimal_color << " beam_width=" << beam_width;
     SolverOutputs ret;
     auto initial_canvas = args.initial_canvas;
     ret.solution = args.optional_initial_solution;
+
+    std::vector<int> deltas;
+    if (power_delta) {
+      for (int k = 1; k <= delta; k *= 2) {
+        deltas.push_back(k);
+        deltas.push_back(-k);
+      }
+    } else {
+      for (int d = -delta; d <= delta; ++d) {
+        if (d != 0) deltas.push_back(d);
+      }
+    }
+    for (auto d : deltas) {
+      LOG(INFO) << "delta " << d;
+    }
 
     GeometricMedianColorCache geometric_median(*args.painting);
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ
@@ -102,7 +120,7 @@ public:
     };
     for (size_t iloop = 0; best_cost_updated && iloop < loop; ++iloop) {
       std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>> next_candidates;
-      if (verbose) LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
+      LOG(INFO) << fmt::format("start loop = {}/{} (best {})", iloop, loop, best_cost);
       best_cost_updated = false;
       while (!current_candidates.empty()) {
         auto work = current_candidates.top().second;
@@ -126,7 +144,7 @@ public:
         for (size_t i = 0; i < work.size(); ++i) {
           //LOG(INFO) << fmt::format("i={}/{}({}%)", i, work.size(), 100.0 * i / work.size());
           if (auto vcut = std::dynamic_pointer_cast<VerticalCutInstruction>(work[i])) {
-            for (int d = -delta; d <= delta; ++d) {
+            for (int d : deltas) {
               auto new_vcut = std::make_shared<VerticalCutInstruction>(vcut->block_id, vcut->lineNumber + d);
               work[i] = new_vcut;
               if (!try_update(next_candidates, work, true, i, "V")) continue;
@@ -134,7 +152,7 @@ public:
             work[i] = vcut;
           }
           else if (auto hcut = std::dynamic_pointer_cast<HorizontalCutInstruction>(work[i])) {
-            for (int d = -delta; d <= delta; ++d) {
+            for (int d : deltas) {
               auto new_hcut = std::make_shared<HorizontalCutInstruction>(hcut->block_id, hcut->lineNumber + d);
               work[i] = new_hcut;
               if (!try_update(next_candidates, work, true, i, "H")) continue;
