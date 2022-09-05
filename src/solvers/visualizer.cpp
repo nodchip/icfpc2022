@@ -259,8 +259,8 @@ struct SeekBarVisualizer {
     const int width = painting->width * 2;
     std::vector<std::string> msgs;
     msgs.push_back(fmt::format("command: {}", instructions[frame_id]->toString()));
-    msgs.push_back(fmt::format(" inst cost: {}", inst_cost_list[frame_id]));
-    msgs.push_back(fmt::format(" sim cost: {}", sim_cost_list[frame_id]));
+    msgs.push_back(fmt::format(" inst cost: {} (+ {})", inst_cost_list[frame_id], inst_cost_list[frame_id] - (frame_id >= 1 ? inst_cost_list[frame_id - 1] : 0)));
+    msgs.push_back(fmt::format("  sim cost: {}", sim_cost_list[frame_id]));
     msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
     msgs.push_back("");
     msgs.push_back(fmt::format("border(b): {}, heatmap(h): {}, logical (x, y)=({:3d}, {:3d})",
