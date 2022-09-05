@@ -153,9 +153,9 @@ public:
 
     // Line cut move で分割する手順を区間 DP で求める
     // O((H+W) * (HW)^2)
-    auto best_divisions = CreateVector<int>(H, H + 1, W, W + 1, 4, -1);
+    auto best_divisions = CreateVector<int8_t>(H, H + 1, W, W + 1, 4, -1);
     auto best_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
-    auto best_uncolored_divisions = CreateVector<int>(H, H + 1, W, W + 1, 4, -1);
+    auto best_uncolored_divisions = CreateVector<int8_t>(H, H + 1, W, W + 1, 4, -1);
     auto best_uncolored_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
     for (int h = 1; h <= H; ++h) {
       for (int w = 1; w <= W; ++w) {
@@ -181,42 +181,42 @@ public:
                     const double cost = point_cut_cost + best_uncolored_costs[b][my][l][mx] + best_uncolored_costs[b][my][mx][r] + best_uncolored_costs[my][t][l][mx] + best_uncolored_costs[my][t][mx][r];
                     if (cost < best_uncolored_cost) {
                       best_uncolored_cost = cost;
-                      best_uncolored_divisions[b][t][l][r] = {my, mx, -1, -1};
+                      best_uncolored_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, -1, -1};
                     }
                   }
                   { // Point cut してから再帰的に処理する
                     const double cost = point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
                     if (cost < best_cost) {
                       best_cost = cost;
-                      best_divisions[b][t][l][r] = {my, mx, -1, -1};
+                      best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, -1, -1};
                     }
                   }
                   { // .0の色に塗ってから...
                     const double cost = color_cost + point_cut_cost + similarity_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
                     if (cost < best_cost) {
                       best_cost = cost;
-                      best_divisions[b][t][l][r] = {my, mx, 0, -1};
+                      best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 0, -1};
                     }
                   }
                   { // .1の色に塗ってから...
                     const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + similarity_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
                     if (cost < best_cost) {
                       best_cost = cost;
-                      best_divisions[b][t][l][r] = {my, mx, 1, -1};
+                      best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 1, -1};
                     }
                   }
                   { // .3の色に塗ってから...
                     const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + similarity_costs[my][t][l][mx] + best_costs[my][t][mx][r];
                     if (cost < best_cost) {
                       best_cost = cost;
-                      best_divisions[b][t][l][r] = {my, mx, 3, -1};
+                      best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 3, -1};
                     }
                   }
                   { // .2の色に塗ってから...
                     const double cost = color_cost + point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + similarity_costs[my][t][mx][r];
                     if (cost < best_cost) {
                       best_cost = cost;
-                      best_divisions[b][t][l][r] = {my, mx, 2, -1};
+                      best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 2, -1};
                     }
                   }
                   if (allow_point_cut_merge) {
@@ -225,7 +225,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[b][my][mx][r] + similarity_costs[b][my][l][mx] + best_costs[my][t][l][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 0, 1};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 0, 1};
                       }
                     }
                     { // .0の色に塗ってから point cut し、 .1 と .2 を merge して再帰する
@@ -233,7 +233,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[my][t][l][mx] + similarity_costs[b][my][l][mx] + best_costs[b][t][mx][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 0, 3};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 0, 3};
                       }
                     }
                     { // .1の色に塗ってから point cut し、 .3 と .0 を merge して再帰する
@@ -241,7 +241,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[my][t][mx][r] + similarity_costs[b][my][mx][r] + best_costs[b][t][l][mx];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 1, 2};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 1, 2};
                       }
                     }
                     { // .1の色に塗ってから point cut し、 .2 と .3 を merge して再帰する
@@ -249,7 +249,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[b][my][l][mx] + similarity_costs[b][my][mx][r] + best_costs[my][t][l][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 1, 0};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 1, 0};
                       }
                     }
                     { // .3の色に塗ってから point cut し、 .1 と .2 を merge して再帰する
@@ -257,7 +257,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[b][my][l][mx] + similarity_costs[my][t][l][mx] + best_costs[b][t][mx][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 3, 0};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 3, 0};
                       }
                     }
                     { // .3の色に塗ってから point cut し、 .0 と .1 を merge して再帰する
@@ -265,7 +265,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[my][t][mx][r] + similarity_costs[my][t][l][mx] + best_costs[b][my][l][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 3, 2};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 3, 2};
                       }
                     }
                     { // .2の色に塗ってから point cut し、 .0 と .1 を merge して再帰する
@@ -273,7 +273,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[my][t][l][mx] + similarity_costs[my][t][mx][r] + best_costs[b][my][l][r];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 2, 3};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 2, 3};
                       }
                     }
                     { // .2の色に塗ってから point cut し、 .3 と .0 を merge して再帰する
@@ -281,7 +281,7 @@ public:
                       const double cost = color_cost + point_cut_cost + merge_cost + best_costs[b][my][mx][r] + similarity_costs[my][t][mx][r] + best_costs[b][t][l][mx];
                       if (cost < best_cost) {
                         best_cost = cost;
-                        best_divisions[b][t][l][r] = {my, mx, 2, 1};
+                        best_divisions[b][t][l][r] = { (int8_t)my, (int8_t)mx, 2, 1};
                       }
                     }
                   }
@@ -294,28 +294,28 @@ public:
                 const double cost = cut_cost + best_uncolored_costs[b][m][l][r] + best_uncolored_costs[m][t][l][r];
                 if (cost < best_uncolored_cost) {
                   best_uncolored_cost = cost;
-                  best_uncolored_divisions[b][t][l][r] = {m, -1, -1, -1};
+                  best_uncolored_divisions[b][t][l][r] = { (int8_t)m, -1, -1, -1};
                 }
               }
               { // Line cut してから上下を再帰的に処理する
                 const double cost = cut_cost + best_costs[b][m][l][r] + best_costs[m][t][l][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {m, -1, -1, -1};
+                  best_divisions[b][t][l][r] = { (int8_t)m, -1, -1, -1};
                 }
               }
               { // 下の block の色に塗ってから line cut し、上の block だけ再帰的に処理する
                 const double cost = color_cost + cut_cost + similarity_costs[b][m][l][r] + best_costs[m][t][l][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {m, -1, 0, -1};
+                  best_divisions[b][t][l][r] = { (int8_t)m, -1, 0, -1};
                 }
               }
               { // 上の block の色に塗ってから line cut し、下の block だけ再帰的に処理する
                 const double cost = color_cost + cut_cost + best_costs[b][m][l][r] + similarity_costs[m][t][l][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {m, -1, 1, -1};
+                  best_divisions[b][t][l][r] = { (int8_t)m, -1, 1, -1};
                 }
               }
             }
@@ -325,28 +325,28 @@ public:
                 const double cost = cut_cost + best_uncolored_costs[b][t][l][m] + best_uncolored_costs[b][t][m][r];
                 if (cost < best_uncolored_cost) {
                   best_uncolored_cost = cost;
-                  best_uncolored_divisions[b][t][l][r] = {-1, m, -1, -1};
+                  best_uncolored_divisions[b][t][l][r] = {-1, (int8_t)m, -1, -1};
                 }
               }
               { // Line cut してから左右を再帰的に処理する
                 const double cost = cut_cost + best_costs[b][t][l][m] + best_costs[b][t][m][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {-1, m, -1, -1};
+                  best_divisions[b][t][l][r] = {-1, (int8_t)m, -1, -1};
                 }
               }
               { // 左の block の色に塗ってから line cut し、右の block だけ再帰的に処理する
                 const double cost = color_cost + cut_cost + similarity_costs[b][t][l][m] + best_costs[b][t][m][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {-1, m, 0, -1};
+                  best_divisions[b][t][l][r] = {-1, (int8_t)m, 0, -1};
                 }
               }
               { // 右の block の色に塗ってから line cut し、左の block だけ再帰的に処理する
                 const double cost = color_cost + cut_cost + best_costs[b][t][l][m] + similarity_costs[b][t][m][r];
                 if (cost < best_cost) {
                   best_cost = cost;
-                  best_divisions[b][t][l][r] = {-1, m, 1, -1};
+                  best_divisions[b][t][l][r] = {-1, (int8_t)m, 1, -1};
                 }
               }
             }
