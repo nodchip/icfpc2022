@@ -18,6 +18,7 @@ class ReorderColor : public SolverBase {
 
     BlockPtr block;
     int area;
+    bool is_cleared = false;
     std::shared_ptr<ColorInstruction> color;
     std::shared_ptr<Instruction> instruction;
     std::vector<std::shared_ptr<BlockInfo>> children;
@@ -85,11 +86,14 @@ class ReorderColor : public SolverBase {
     }
 
     for (int i = start_index; i < last_index; ++i) {
-      if (!IsWorkableInstruction(instructions[i])) {
-        LOG(INFO) << "\"" << instructions[i]->toString() << "\" at " << i + 1
-                  << "th is not workable";
-        return false;
+      if (IsWorkableInstruction(instructions[i]) ||
+          instructions[i]->getBaseCost() == 0) {
+        continue;
       }
+
+      LOG(INFO) << "\"" << instructions[i]->toString() << "\" at " << i + 1
+                << "th is not workable";
+      return false;
     }
     return true;
   }
@@ -136,6 +140,11 @@ class ReorderColor : public SolverBase {
       auto&& outputs = operand.output_blocks;
       switch (outputs.size()) {
         case 1:  // ColorInstruction
+          if (info->color) {
+            LOG(INFO) << "\"" << info->color->toString() << "\" was set. "
+                      << "We overwrite it with \"" << instruction->toString()
+                      << "\"";
+          }
           info->color =
               std::dynamic_pointer_cast<ColorInstruction>(instruction);
           assert(info->color);
@@ -162,6 +171,11 @@ class ReorderColor : public SolverBase {
     }
     std::sort(infos.begin(), infos.end(),
               [](auto&& a, auto&& b) -> bool { return a->area < b->area; });
+    auto&& root = infos.back();
+    if (root->color) {
+      root->is_cleared = true;
+    }
+
     return infos;
   }
 
@@ -207,20 +221,15 @@ class ReorderColor : public SolverBase {
   static Instructions BuildInstructions(
       const BlockInfos& infos,
       const Instructions& initial_instructions) {
+    // Remove unintentional clearing root.
     auto root = infos.back();
+    if (!root->is_cleared && root->color) {
+      root->color.reset();
+    }
+
     Instructions instructions;
     for (auto&& inst : initial_instructions) {
-      if (auto&& color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
-        if (root->color && !(color->block_id == root->block->id &&
-                             color->color == root->color->color)) {
-          // If the root block is unintentionally colored, don't do it.
-          root->color.reset();
-        }
-        break;
-      }
-      if (std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
-          std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
-          std::dynamic_pointer_cast<PointCutInstruction>(inst)) {
+      if (IsWorkableInstruction(inst)) {
         break;
       }
       instructions.push_back(inst);
@@ -245,10 +254,7 @@ class ReorderColor : public SolverBase {
     Instructions tail_instructions;
     for (int i = initial_instructions.size() - 1; i >= 0; --i) {
       auto&& inst = initial_instructions[i];
-      if (std::dynamic_pointer_cast<ColorInstruction>(inst) ||
-          std::dynamic_pointer_cast<VerticalCutInstruction>(inst) ||
-          std::dynamic_pointer_cast<HorizontalCutInstruction>(inst) ||
-          std::dynamic_pointer_cast<PointCutInstruction>(inst)) {
+      if (IsWorkableInstruction(inst)) {
         break;
       }
       tail_instructions.push_back(inst);
