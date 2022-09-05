@@ -186,3 +186,29 @@ std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomL
     return round_color;
   }
 }
+
+GeometricMedianColorCache::GeometricMedianColorCache(const Painting& painting) : painting(painting) {} 
+GeometricMedianColorCache::~GeometricMedianColorCache() {
+  LOG(INFO) << fmt::format("color cache size={}, hit={}({:.1f}%), miss={}({:.1f}%)",
+    cache.size(),
+    hit_count, 100.0 * hit_count / (hit_count + miss_count),
+    miss_count, 100.0 * miss_count / (hit_count + miss_count));
+}
+std::optional<RGBA> GeometricMedianColorCache::getColor(Point bottomLeft, Point topRight) {
+  assert(0 <= bottomLeft.px && bottomLeft.px <= 0xffff);
+  assert(0 <= bottomLeft.py && bottomLeft.py <= 0xffff);
+  assert(0 <= topRight.px && topRight.px <= 0xffff);
+  assert(0 <= topRight.py && topRight.py <= 0xffff);
+  const auto key = (uint64_t(bottomLeft.px & 0xffff) << 24) | (uint64_t(bottomLeft.py & 0xffff) << 16) | (uint64_t(topRight.px & 0xffff) << 8) | uint64_t(topRight.py & 0xffff);
+  auto it = cache.find(key);
+  std::optional<RGBA> color;
+  if (it == cache.end()) {
+    ++miss_count;
+    color = geometricMedianColor(painting, bottomLeft, topRight, true);
+    cache.insert({key, color});
+  } else {
+    ++hit_count;
+    color = it->second;
+  }
+  return color;
+}

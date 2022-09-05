@@ -7,6 +7,51 @@
 #include "interpreter.h"
 #include "painter.h"
 
+// instructionsの全colorを最終的な最適値に置換する
+static std::vector<std::shared_ptr<Instruction>> replaceToOptimalColorInstruction(GeometricMedianColorCache& cache, Painting& painting, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+  auto result = instructions;
+
+  const RGBA white(255, 255, 255, 255);
+  const RGBA marker(0, 0, 0, 0);
+  auto white_instructions = instructions;
+  for (auto& inst : white_instructions) {
+    if (auto color = std::dynamic_pointer_cast<ColorInstruction>(inst)) {
+      color->color = white;
+    }
+  }
+
+  for (int i = 0; i < instructions.size(); ++i) {
+    if (auto col = std::dynamic_pointer_cast<ColorInstruction>(instructions[i])) {
+      // このcolorの最終的な描画先を探す
+      auto work = white_instructions;
+      work[i] = std::make_shared<ColorInstruction>(col->block_id, marker);
+      // 各color命令が最終的に一つのSimpleBlockと仮定している(ソルバーによっては成立しない)
+      Point bottomLeft(0, 0), topRight(0, 0);
+      {
+        auto canvas = computeCost(painting, initial_canvas, work)->canvas;
+        assert(canvas);
+        for (const auto& [_, block] : canvas->blocks) {
+          if (auto simple_block = std::dynamic_pointer_cast<SimpleBlock>(block)) {
+            if (simple_block->color == marker) {
+              bottomLeft = simple_block->bottomLeft;
+              topRight = simple_block->topRight;
+              break;
+            }
+          }
+        }
+      }
+      if (bottomLeft != topRight) {
+        auto color = cache.getColor(bottomLeft, topRight);
+        if (color) {
+          auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
+          result[i] = new_col;
+        }
+      }
+    }
+  }
+  return result;
+}
+
 class BeamSearchAdjustPosition : public SolverBase {
 public:
   struct Option : public OptionBase {
@@ -14,6 +59,7 @@ public:
     int delta = 10;
     bool verbose = false;
     bool adjust_color = false; // あまり効かない(少なくともIntervalDPSolver3に対して)
+    bool optimal_color = false; // かなり重い. cutを動かす際の評価値として、cutを動かした上で最終的なスコアの意味で全colorを最適値に設定した値を用いる. これを用いる場合は多分adjust_colorは不要になる。
     int beam_width = 10;
     void setOptionParser(CLI::App* app) override {
       app->add_option("--beam-search-adjust-position-loop", loop);
@@ -21,6 +67,7 @@ public:
       app->add_option("--beam-search-adjust-position-beam-width", beam_width);
       app->add_flag("--beam-search-adjust-position-verbose", verbose);
       app->add_flag("--beam-search-adjust-position-color", adjust_color);
+      app->add_flag("--beam-search-adjust-position-optimal-color", optimal_color);
     }
   };
   virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
@@ -31,12 +78,14 @@ public:
     const int loop = getOption<Option>()->loop;
     const bool verbose = getOption<Option>()->verbose;
     const bool adjust_color = getOption<Option>()->adjust_color;
+    const bool optimal_color = getOption<Option>()->optimal_color;
     const int beam_width = getOption<Option>()->beam_width;
-    LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color << " beam_width=" << beam_width;
+    LOG(INFO) << "delta = " << delta << " loop = " << loop << " color = " << adjust_color << " optimal_clor = " << optimal_color << " beam_width=" << beam_width;
     SolverOutputs ret;
     auto initial_canvas = args.initial_canvas;
     ret.solution = args.optional_initial_solution;
 
+    GeometricMedianColorCache geometric_median(*args.painting);
     // 入力のcutについて、±deltaの範囲でスコアを最高にする物を選ぶ
     // score -> instructions
     std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>> current_candidates;
@@ -44,22 +93,40 @@ public:
     int best_cost = std::numeric_limits<int>::max();
     std::vector<std::shared_ptr<Instruction>> best_inst;
     bool best_cost_updated = true;
-    auto try_update = [&](std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>>& next_candidates, const std::vector<std::shared_ptr<Instruction>>& work, const std::string& tag) {
+    auto try_update = [&](std::priority_queue<std::pair<int, std::vector<std::shared_ptr<Instruction>>>>& next_candidates, const std::vector<std::shared_ptr<Instruction>>& work, bool is_cut, int i, const std::string& tag) {
       std::optional<CostBreakdown> cost;
       try { 
         cost = computeCost(*args.painting, initial_canvas, work);
       } catch (const InvalidInstructionException& e) {
         return false;
       }
-      if (cost && 0 < cost->total && (next_candidates.size() < beam_width || cost->total < next_candidates.top().first)) {
-        if (verbose) LOG(INFO) << fmt::format("[{}] update cost {} -> {}", tag, best_cost, cost->total);
-        next_candidates.push(std::make_pair(cost->total, work));
+      if (!cost || 0 >= cost->total) return false;
+      int final_cost = cost->total;
+      std::vector<std::shared_ptr<Instruction>> work_opt = work;
+      if (optimal_color && is_cut) {
+        // 全てのcolorコマンドを最適に設定したと仮定した際のコストに更新
+        work_opt = replaceToOptimalColorInstruction(geometric_median, *args.painting, initial_canvas, work);
+        std::optional<CostBreakdown> cost_opt; try { 
+          cost_opt = computeCost(*args.painting, initial_canvas, work_opt);
+        } catch (const InvalidInstructionException& e) {
+          return false;
+        }
+        if (cost_opt && 0 < cost_opt->total) {
+          assert(cost_opt->total <= final_cost);
+          if (cost_opt->total < final_cost ) {
+            final_cost = cost_opt->total;
+          }
+        }
+      }
+      if (next_candidates.size() < beam_width || final_cost < next_candidates.top().first) {
+        if (verbose) LOG(INFO) << fmt::format("[{}] update cost {} -> {}", tag, best_cost, final_cost);
+        next_candidates.push(std::make_pair(final_cost, work_opt));
         if (next_candidates.size() > beam_width) {
           next_candidates.pop();
         }
-        if (best_cost > cost->total) {
-          best_cost = cost->total;
-          best_inst = work;
+        if (best_cost > final_cost) {
+          best_cost = final_cost;
+          best_inst = work_opt;
           best_cost_updated = true;
         }
       }
@@ -79,7 +146,7 @@ public:
             for (int d = -delta; d <= delta; ++d) {
               auto new_vcut = std::make_shared<VerticalCutInstruction>(vcut->block_id, vcut->lineNumber + d);
               work[i] = new_vcut;
-              if (!try_update(next_candidates, work, "V")) continue;
+              if (!try_update(next_candidates, work, true, i, "V")) continue;
             }
             work[i] = vcut;
           }
@@ -87,7 +154,7 @@ public:
             for (int d = -delta; d <= delta; ++d) {
               auto new_hcut = std::make_shared<HorizontalCutInstruction>(hcut->block_id, hcut->lineNumber + d);
               work[i] = new_hcut;
-              if (!try_update(next_candidates, work, "H")) continue;
+              if (!try_update(next_candidates, work, true, i, "H")) continue;
             }
             work[i] = hcut;
           }
@@ -117,7 +184,7 @@ public:
                 if (color) {
                   auto new_col = std::make_shared<ColorInstruction>(col->block_id, *color);
                   work[i] = new_col;
-                  try_update(next_candidates, work, "C");
+                  try_update(next_candidates, work, false, i, "C");
                   work[i] = col;
                 }
               }

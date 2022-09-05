@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <optional>
+#include <unordered_map>
 
 #include "aligned_allocator.h"
 #include "color.h"
@@ -37,3 +38,13 @@ std::optional<RGBA> meanColor(const Painting& painting, Point bottomLeft, Point 
 //   roundは必ずしもスコアが最適ではないので、2^4=16パターンのうちコスト最小のものを選ぶ
 //   iter+=16する程度の計算コストが掛かる
 std::optional<RGBA> geometricMedianColor(const Painting& painting, Point bottomLeft, Point topRight, bool finalAdjustment, int maxIter=100);
+
+struct GeometricMedianColorCache {
+  const Painting& painting;
+  std::unordered_map<uint64_t, std::optional<RGBA>> cache;
+  size_t miss_count = 0, hit_count = 0;
+  GeometricMedianColorCache(const Painting& painting);
+  ~GeometricMedianColorCache();
+  std::optional<RGBA> getColor(Point bottomLeft, Point topRight);
+};
+
