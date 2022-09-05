@@ -348,26 +348,33 @@ struct SeekBarVisualizer {
     return selected_block;
   }
 
-  void exec_color_inst() {
+  void exec_color_inst(bool draw_optimal) {
     auto point = get_logical_mouse_position();
     auto canvas = canvas_list[frame_id];
     auto block = get_block(canvas, point);
     if (!block) return;
-    auto opt_color = *geometricMedianColor(*painting, block->bottomLeft, block->topRight, true);
-    // 最適化済みならスルー
-    std::string prev_color;
-    if (auto sblock = std::dynamic_pointer_cast<SimpleBlock>(block)) {
-      prev_color = std::to_string(sblock->color);
-      if (sblock->color == opt_color) {
-        LOG(INFO) << "block color is optimal!";
-        return;
+    std::shared_ptr<Instruction> color_inst;
+    if (draw_optimal) {
+      auto opt_color = *geometricMedianColor(*painting, block->bottomLeft, block->topRight, true);
+      // 最適化済みならスルー
+      std::string prev_color;
+      if (auto sblock = std::dynamic_pointer_cast<SimpleBlock>(block)) {
+        prev_color = std::to_string(sblock->color);
+        if (sblock->color == opt_color) {
+          LOG(INFO) << "block color is optimal!";
+          return;
+        }
       }
+      else {
+        prev_color = "complex";
+      }
+      LOG(INFO) << fmt::format("color change: {} -> {}", prev_color, std::to_string(opt_color));
+      color_inst = std::make_shared<ColorInstruction>(block->id, opt_color);
     }
     else {
-      prev_color = "complex";
+      auto color = (*painting)(point.px, point.py);
+      color_inst = std::make_shared<ColorInstruction>(block->id, color);
     }
-    LOG(INFO) << fmt::format("color change: {} -> {}", prev_color, std::to_string(opt_color));
-    auto color_inst = std::make_shared<ColorInstruction>(block->id, opt_color);
     remove_successor_states();
     read_instruction(color_inst);
     fit_frame_trackbar(true);
@@ -493,14 +500,16 @@ struct SeekBarVisualizer {
   }
 
   void exec_mouse_action() {
-    if (mp->clicked_left()) {
+    bool clicked_left = mp->clicked_left();
+    bool clicked_right = mp->clicked_right();
+    if (clicked_left || clicked_right) {
       LOG(INFO) << fmt::format("logical mouse position: x={:3d}, y={:3d}", get_logical_mouse_position().px, get_logical_mouse_position().py);
 
       switch (mpp->inst_type) {
       case '0':
         break;
       case '1': // Color
-        exec_color_inst();
+        exec_color_inst(clicked_left); // draw optimal color
         break;
       case '2': // Point
         exec_point_cut_inst();
