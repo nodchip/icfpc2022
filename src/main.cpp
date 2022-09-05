@@ -167,7 +167,6 @@ int main(int argc, char* argv[]) {
   std::string initial_solution_isl;
   std::string output_solution_isl = "output.isl";
   double timeout_s = -1.0;
-  bool visualize = false;
   bool output_phase_isl = true;
   bool output_meta = true;
   bool record_csv = true;
@@ -180,7 +179,6 @@ int main(int argc, char* argv[]) {
   sub_solve->add_option("output_solution_isl", output_solution_isl, "output solution ISL file path (optional. default=output.isl)");
   sub_solve->add_option("initial_solution_isl", initial_solution_isl, "input solution ISL file path (optional)");
   sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
-  sub_solve->add_flag("--visualize", visualize, "realtime visualize");
   sub_solve->add_flag("--output-phase,!--no-output-phase", output_phase_isl, "output phase ISL files (outfile.1.isl, outfile.2.isl, ..)");
   sub_solve->add_flag("--output-meta,!--no-output-meta", output_meta, "output meta file");
   sub_solve->add_flag("--record-csv,!--no-record-csv", record_csv, "create or append to record.csv");
@@ -334,7 +332,6 @@ int main(int argc, char* argv[]) {
 
     SolverArguments arg(problem, initial_canvas, previous_canvas);
     arg.optional_initial_solution = initial_solution;
-    arg.visualize = visualize;
     if (timeout_s > 0) {
       arg.timeout_s = timeout_s;
     }
@@ -454,7 +451,6 @@ int main(int argc, char* argv[]) {
 
     SolverArguments arg(problem, initial_canvas, initial_canvas);
     arg.optional_initial_solution = loadSolution(*problem);
-    arg.visualize = visualize;
     if (timeout_s > 0) {
       arg.timeout_s = timeout_s;
     }

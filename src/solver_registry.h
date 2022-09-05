@@ -19,7 +19,6 @@ struct SolverArguments {
   CanvasPtr previous_canvas;
   std::vector<std::shared_ptr<Instruction>> optional_initial_solution;
 
-  bool visualize = false;
   std::optional<double> timeout_s;
   std::optional<unsigned int> random_seed;
 };
