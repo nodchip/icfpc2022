@@ -38,7 +38,7 @@ std::shared_ptr<InterpreterResult> Interpreter::Interpret(const std::shared_ptr<
 std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<ColorInstruction>& color_instruction) {
   // TypeCheck Starts
   const auto& [blockId, color] = *color_instruction;
-  assert(context->blocks.count(blockId));
+  assert_throw_invalid_instruction(context->blocks.count(blockId));
   auto block = context->blocks[blockId];
   // TypeCheck Ends
 
@@ -82,7 +82,7 @@ std::shared_ptr<InterpreterResult> Interpreter::ColorCanvas(const std::shared_pt
 std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<PointCutInstruction>& point_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, point] = *point_cut_instruction;
-  assert(context->blocks.count(blockId));
+  assert_throw_invalid_instruction(context->blocks.count(blockId));
   auto block = context->blocks[blockId];
   assert_throw_invalid_instruction(point.isStrictlyInside(block->bottomLeft, block->topRight));
   // TypeCheck Ends
@@ -326,7 +326,7 @@ std::shared_ptr<InterpreterResult> Interpreter::PointCutCanvas(const std::shared
 std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<VerticalCutInstruction>& vertical_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, lineNumber] = *vertical_cut_instruction;
-  assert(context->blocks.count(blockId));
+  assert_throw_invalid_instruction(context->blocks.count(blockId));
   auto block = context->blocks[blockId];
   assert_throw_invalid_instruction(block->bottomLeft.px <= lineNumber && lineNumber <= block->topRight.px);
   // TypeCheck Ends
@@ -427,7 +427,7 @@ std::shared_ptr<InterpreterResult> Interpreter::VerticalCutCanvas(const std::sha
 std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<HorizontalCutInstruction>& horizontal_cut_instruction) {
   // TypeCheck Starts
   const auto& [blockId, lineNumber] = *horizontal_cut_instruction;
-  assert(context->blocks.count(blockId));
+  assert_throw_invalid_instruction(context->blocks.count(blockId));
   auto block = context->blocks[blockId];
   assert_throw_invalid_instruction(block->bottomLeft.py <= lineNumber && lineNumber <= block->topRight.py);
   // TypeCheck Ends
@@ -529,8 +529,8 @@ std::shared_ptr<InterpreterResult> Interpreter::HorizontalCutCanvas(const std::s
 std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<SwapInstruction>& swap_instruction) {
   // TypeCheck Starts
   const auto& [blockId1, blockId2] = *swap_instruction;
-  assert(context->blocks.count(blockId1));
-  assert(context->blocks.count(blockId2));
+  assert_throw_invalid_instruction(context->blocks.count(blockId1));
+  assert_throw_invalid_instruction(context->blocks.count(blockId2));
   auto block1 = context->blocks[blockId1];
   auto block2 = context->blocks[blockId2];
   // TypeCheck Ends
@@ -597,8 +597,8 @@ std::shared_ptr<InterpreterResult> Interpreter::SwapCanvas(const std::shared_ptr
 std::shared_ptr<InterpreterResult> Interpreter::MergeCanvas(const std::shared_ptr<Canvas>& context, std::shared_ptr<OperandMap>& operands, const std::shared_ptr<MergeInstruction>& merge_instruction) {
   // TypeCheck Starts
   const auto& [blockId1, blockId2] = *merge_instruction;
-  assert(context->blocks.count(blockId1));
-  assert(context->blocks.count(blockId2));
+  assert_throw_invalid_instruction(context->blocks.count(blockId1));
+  assert_throw_invalid_instruction(context->blocks.count(blockId2));
   auto block1 = context->blocks[blockId1];
   auto block2 = context->blocks[blockId2];
   // TypeCheck Ends

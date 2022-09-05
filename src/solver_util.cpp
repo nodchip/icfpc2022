@@ -5,6 +5,48 @@
 #include "painter.h"
 #include "interpreter.h"
 
+std::vector<std::shared_ptr<Instruction>> removeAdverseInstruction(GeometricMedianColorCache& cache, Painting& painting, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
+  std::vector<std::shared_ptr<Instruction>> work = instructions;
+  int current_cost = 0;
+  try {
+    auto cost = computeCost(painting, initial_canvas, work);
+    current_cost = cost->total;
+  } catch (const InvalidInstructionException& e) {
+    return instructions;
+  }
+
+  int num_removed = 0;
+  bool removed = false;
+  do {
+    removed = false;
+    for (int i = 0; i < work.size(); ++i) {
+      if (work[i]->getBaseCost() > 0) { // コスト0の命令は処理する意味が無い
+        // temp <- work[0:i] + work[i+1:N]
+        std::vector<std::shared_ptr<Instruction>> temp(work.begin(), work.begin() + i);
+        std::copy(work.begin() + i + 1, work.end(), std::back_inserter(temp));
+        int temp_cost = 0;
+        try {
+          auto cost = computeCost(painting, initial_canvas, temp);
+          temp_cost = cost->total;
+        } catch (const InvalidInstructionException& e) {
+          continue;
+        }
+        LOG(INFO) << work[i]->toString() << " " << temp_cost << " " << current_cost;
+        if (temp_cost < current_cost) {
+          current_cost = temp_cost;
+          work = temp;
+          removed = true;
+          ++num_removed;
+          break;
+        }
+      }
+    }
+  } while (removed);
+
+  LOG(INFO) << "num_removed = " << num_removed;
+  return work;
+}
+
 std::vector<std::shared_ptr<Instruction>> replaceColorInstructionOptimal(GeometricMedianColorCache& cache, Painting& painting, CanvasPtr initial_canvas, const std::vector<std::shared_ptr<Instruction>>& instructions) {
   auto result = instructions;
 

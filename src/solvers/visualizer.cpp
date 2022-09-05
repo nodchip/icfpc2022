@@ -58,6 +58,26 @@ struct MouseParams {
   }
 };
 
+struct ManualParams;
+using ManualParamsPtr = std::shared_ptr<ManualParams>;
+struct ManualParams {
+  // '1': Color
+  // '2': Point
+  // '3': Vertical
+  // '4': Horizontal
+  // '5': Swap
+  // '6': Merge
+  const std::vector<std::string> inst_name_map{
+    "Nop", "Color", "Point", "Vertical", "Horizontal", "Swap", "Merge"
+  };
+
+  char inst_type = '1';
+
+  std::string get_inst_name() const {
+    return inst_name_map[inst_type - '0'];
+  }
+};
+
 struct SeekBarVisualizer {
 
   static constexpr int mag = 2;
@@ -80,8 +100,17 @@ struct SeekBarVisualizer {
   cv::Mat_<cv::Vec4b> img;
   MouseParamsPtr mp;
 
-  SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas) : painting(painting) {
+  bool manual;
+  ManualParamsPtr mpp = nullptr;
+
+  SeekBarVisualizer(const PaintingPtr& painting, const CanvasPtr& initial_canvas, bool manual)
+    : painting(painting), manual(manual)
+  {
     mp = std::make_shared<MouseParams>();
+    if (manual) {
+      LOG(INFO) << "create manual params";
+      mpp = std::make_shared<ManualParams>();
+    }
     interpreter.top_level_id_counter = initial_canvas->calcTopLevelId();
     instructions.push_back(std::make_shared<NopInstruction>());
     canvas_list.push_back(initial_canvas);
@@ -92,7 +121,8 @@ struct SeekBarVisualizer {
 
   void read_instruction(const std::shared_ptr<Instruction>& inst) {
     auto canvas = canvas_list.back()->Clone();
-    interpreter.Interpret(canvas, nullptr, inst);
+    auto inst_cost = interpreter.Interpret(canvas, nullptr, inst)->cost;
+    LOG(INFO) << fmt::format("instruction cost: {}", inst_cost);
     instructions.push_back(inst);
     canvas_list.push_back(canvas);
     auto res = computeCost(*painting, canvas_list.front()->Clone(), instructions);
@@ -100,7 +130,23 @@ struct SeekBarVisualizer {
     sim_cost_list.push_back(res->similarity);
   }
 
-  Point get_mouse_position() const {
+  void remove_successor_states() {
+    instructions.erase(instructions.begin() + frame_id + 1, instructions.end());
+    canvas_list.erase(canvas_list.begin() + frame_id + 1, canvas_list.end());
+    inst_cost_list.erase(inst_cost_list.begin() + frame_id + 1, inst_cost_list.end());
+    sim_cost_list.erase(sim_cost_list.begin() + frame_id + 1, sim_cost_list.end());
+    fit_frame_trackbar();
+  }
+
+  void fit_frame_trackbar(bool move_newest = false) {
+    cv::setTrackbarMax("frame id", winname, instructions.size() - 1);
+    if (move_newest) {
+      frame_id = instructions.size() - 1;
+      cv::setTrackbarPos("frame id", winname, frame_id);
+    }
+  }
+
+  Point get_logical_mouse_position() const {
     return { mp->x / mag, painting->height - (mp->y - info_height) / mag };
   }
 
@@ -155,7 +201,7 @@ struct SeekBarVisualizer {
       const RGBA border_emphasis_color{ 255, 0, 0, 255 };
       for (const auto& [block_id, block] : canvas->blocks) {
         assert(block);
-        bool on_block = get_mouse_position().isStrictlyInside(block->bottomLeft, block->topRight);
+        bool on_block = get_logical_mouse_position().isStrictlyInside(block->bottomLeft, block->topRight);
         auto border_color = on_block ? border_emphasis_color : border_default_color;
 
         // i* は画像座標
@@ -215,11 +261,15 @@ struct SeekBarVisualizer {
     msgs.push_back(fmt::format(" sim cost: {}", sim_cost_list[frame_id]));
     msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
     msgs.push_back("");
-    msgs.push_back(fmt::format("{} logical (x, y)=({:3d}, {:3d})", mp->str(), get_mouse_position().px, get_mouse_position().py));
-    msgs.push_back(fmt::format("border(b): {}, heatmap(h): {}",
+    msgs.push_back(fmt::format("border(b): {}, heatmap(h): {}, logical (x, y)=({:3d}, {:3d})",
       draw_border_flag ? "on" : "off",
-      heatmap_flag ? "on" : "off"
-      ));
+      heatmap_flag ? "on" : "off",
+      get_logical_mouse_position().px, get_logical_mouse_position().py
+    ));
+    if (manual) {
+      msgs.push_back(fmt::format("type: {}", mpp->get_inst_name()));
+    }
+
     cv::Mat_<cv::Vec4b> img_info(info_height, width, cv::Vec4b(200, 200, 200, 255));
     for (int i = 0; i < msgs.size(); i++) {
       cv::putText(img_info, msgs[i], cv::Point(5, (i + 1) * 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0, 0), 1, cv::LINE_AA);
@@ -273,8 +323,115 @@ struct SeekBarVisualizer {
         frame_id = std::clamp(frame_id + (c == 2 ? -1 : 1), min, max);
         cv::setTrackbarPos("frame id", winname, frame_id);
       }
+
+      if (manual) {
+        if ('0' <= c && c <= '6') {
+          mpp->inst_type = c;
+        }
+      }
+
       img = create_image();
       cv::imshow(winname, img);
+    }
+  }
+
+  std::shared_ptr<Block> get_block(CanvasPtr canvas, const Point& p) {
+    std::shared_ptr<Block> selected_block = nullptr;
+    for (const auto& [block_id, block] : canvas->blocks) {
+      assert(block);
+      if (p.isInside(block->bottomLeft, block->topRight)) {
+        selected_block = block;
+      }
+    }
+    return selected_block;
+  }
+
+  void exec_color_inst() {
+    remove_successor_states();
+    auto point = get_logical_mouse_position();
+    auto canvas = canvas_list[frame_id];
+    auto block = get_block(canvas, point);
+    if (!block) return;
+    auto opt_color = *geometricMedianColor(*painting, block->bottomLeft, block->topRight, true);
+    // 最適化済みならスルー
+    std::string prev_color;
+    if (auto sblock = std::dynamic_pointer_cast<SimpleBlock>(block)) {
+      prev_color = std::to_string(sblock->color);
+      if (sblock->color == opt_color) {
+        LOG(INFO) << "block color is optimal!";
+        return;
+      }
+    }
+    else {
+      prev_color = "complex";
+    }
+    LOG(INFO) << fmt::format("color change: {} -> {}", prev_color, std::to_string(opt_color));
+    auto color_inst = std::make_shared<ColorInstruction>(block->id, opt_color);
+    read_instruction(color_inst);
+    fit_frame_trackbar(true);
+  }
+
+  void exec_point_cut_inst() {
+    remove_successor_states();
+    auto point = get_logical_mouse_position();
+    auto canvas = canvas_list[frame_id];
+    auto block = get_block(canvas, point);
+    if (!block) return;
+    if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
+    auto point_inst = std::make_shared<PointCutInstruction>(block->id, point);
+    read_instruction(point_inst);
+    fit_frame_trackbar(true);
+  }
+
+  void exec_vertical_cut_inst() {
+    remove_successor_states();
+    auto point = get_logical_mouse_position();
+    auto canvas = canvas_list[frame_id];
+    auto block = get_block(canvas, point);
+    if (!block) return;
+    if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
+    auto vertical_inst = std::make_shared<VerticalCutInstruction>(block->id, point.px);
+    read_instruction(vertical_inst);
+    fit_frame_trackbar(true);
+  }
+
+  void exec_horizontal_cut_inst() {
+    remove_successor_states();
+    auto point = get_logical_mouse_position();
+    auto canvas = canvas_list[frame_id];
+    auto block = get_block(canvas, point);
+    if (!block) return;
+    if (!point.isStrictlyInside(block->bottomLeft, block->topRight)) return;
+    auto horizontal_inst = std::make_shared<HorizontalCutInstruction>(block->id, point.py);
+    read_instruction(horizontal_inst);
+    fit_frame_trackbar(true);
+  }
+
+  void exec_mouse_action() {
+    if (mp->clicked_left()) {
+      LOG(INFO) << fmt::format("logical mouse position: x={:3d}, y={:3d}", get_logical_mouse_position().px, get_logical_mouse_position().py);
+
+      switch (mpp->inst_type) {
+      case '0':
+        break;
+      case '1': // Color
+        exec_color_inst();
+        break;
+      case '2': // Point
+        exec_point_cut_inst();
+        break;
+      case '3': // Vertical
+        exec_vertical_cut_inst();
+        break;
+      case '4': // Horizontal
+        exec_horizontal_cut_inst();
+        break;
+      case '5':
+      case '6':
+      default:
+        break;
+      }
+
     }
   }
 
@@ -291,9 +448,7 @@ struct SeekBarVisualizer {
   static void mouse_callback(int e, int x, int y, int f, void* param) {
     auto vis = static_cast<SeekBarVisualizer*>(param);
     vis->mp->load(e, x, y, f);
-    if (vis->mp->clicked_left()) {
-      LOG(INFO) << fmt::format("logical mouse position: x={:3d}, y={:3d}", vis->get_mouse_position().px, vis->get_mouse_position().py);
-    }
+    vis->exec_mouse_action();
   }
 
 };
@@ -302,13 +457,25 @@ struct SeekBarVisualizer {
 
 class Visualizer : public SolverBase {
 public:
+
+  struct Option : public OptionBase {
+    bool manual = false;
+    void setOptionParser(CLI::App* app) override {
+      app->add_flag("--manual", manual);
+    }
+  };
+  virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
+
   Visualizer() { }
   SolverOutputs solve(const SolverArguments &args) override {
 
     SolverOutputs ret;
 
+    bool manual = getOption<Option>()->manual;
+    LOG(INFO) << fmt::format("manual mode: {}", manual);
+
     auto canvas = args.initial_canvas->Clone();
-    SeekBarVisualizer visualizer(args.painting, canvas);
+    SeekBarVisualizer visualizer(args.painting, canvas, manual);
 
     auto instructions = args.optional_initial_solution;
     for (const auto& inst : instructions) {
@@ -317,12 +484,18 @@ public:
 
     visualizer.vis();
 
-    ret.solution = instructions;
+    if (manual) {
+      ret.solution = visualizer.instructions;
+    }
+    else {
+      ret.solution = args.optional_initial_solution;
+    }
+
     return ret;
 
   }
 };
-REGISTER_SOLVER("Visualizer", Visualizer);
+REGISTER_SOLVER_WITH_OPTION("Visualizer", Visualizer, Visualizer::Option);
 
 // vim:ts=2 sw=2 sts=2 et ci
 

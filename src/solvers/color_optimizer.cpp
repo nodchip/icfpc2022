@@ -28,7 +28,27 @@ public:
     return ret;
   }
 };
-
 REGISTER_SOLVER_WITH_OPTION("ColorOptimizer", ColorOptimizer, ColorOptimizer::Option);
+
+class RemoveAdverseInstructionOptimizer : public SolverBase {
+public:
+  struct Option : public OptionBase {
+    void setOptionParser(CLI::App* app) override {
+    }
+  };
+  virtual OptionBase::Ptr createOption() { return std::make_shared<Option>(); }
+
+  RemoveAdverseInstructionOptimizer() { }
+  SolverOutputs solve(const SolverArguments &args) override {
+    SolverOutputs ret;
+
+    GeometricMedianColorCache color_cache(*args.painting);
+    ret.solution = removeAdverseInstruction(color_cache, *args.painting, args.initial_canvas, args.optional_initial_solution);
+
+    return ret;
+  }
+};
+REGISTER_SOLVER_WITH_OPTION("RemoveAdverseInstructionOptimizer", RemoveAdverseInstructionOptimizer, RemoveAdverseInstructionOptimizer::Option);
+
 // vim:ts=2 sw=2 sts=2 et ci
 
