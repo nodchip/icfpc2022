@@ -1,7 +1,7 @@
 #include "stdafx.h"
+#ifdef _WIN32
 #include <thread>
 #include <queue>
-#include <format>
 #include "solver_registry.h"
 #include <fmt/format.h>
 #include "instruction.h"
@@ -15,7 +15,6 @@
 
 
 
-#if 1
 
 template <typename T, typename... Args>
 auto CreateVector(std::size_t count, Args&&... args) {
