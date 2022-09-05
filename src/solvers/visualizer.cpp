@@ -215,7 +215,7 @@ struct SeekBarVisualizer {
     msgs.push_back(fmt::format(" sim cost: {}", sim_cost_list[frame_id]));
     msgs.push_back(fmt::format("total cost: {}", inst_cost_list[frame_id] + sim_cost_list[frame_id]));
     msgs.push_back("");
-    msgs.push_back(mp->str());
+    msgs.push_back(fmt::format("{} logical (x, y)=({:3d}, {:3d})", mp->str(), get_mouse_position().px, get_mouse_position().py));
     msgs.push_back(fmt::format("border(b): {}, heatmap(h): {}",
       draw_border_flag ? "on" : "off",
       heatmap_flag ? "on" : "off"
@@ -291,6 +291,9 @@ struct SeekBarVisualizer {
   static void mouse_callback(int e, int x, int y, int f, void* param) {
     auto vis = static_cast<SeekBarVisualizer*>(param);
     vis->mp->load(e, x, y, f);
+    if (vis->mp->clicked_left()) {
+      LOG(INFO) << fmt::format("logical mouse position: x={:3d}, y={:3d}", vis->get_mouse_position().px, vis->get_mouse_position().py);
+    }
   }
 
 };

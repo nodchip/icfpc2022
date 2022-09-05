@@ -51,7 +51,7 @@ public:
       return true;
     };
     for (size_t iloop = 0; iloop < loop; ++iloop) {
-      if (verbose) LOG(INFO) << fmt::format("loop = {}/{}", iloop, loop);
+      LOG(INFO) << fmt::format("start loop = {}/{} (best {})", iloop, loop, best_cost);
       const int best_cost_at_the_beginning_of_loop = best_cost;
       std::vector<std::shared_ptr<Instruction>> work = best_inst;
       for (size_t i = 0; i < work.size(); ++i) {

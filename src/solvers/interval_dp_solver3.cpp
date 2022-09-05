@@ -52,9 +52,8 @@ public:
     assert(canvas->blocks[top_level_id]->size == canvas->size());
     const int height = args.painting->height;
     const int width = args.painting->width;
-    const auto get_value = [&, frame=args.painting->frame](int y, int x, int c) {
-      return frame[x + y * width][c];
-    };
+    const auto initial_frame = Painter::draw(*canvas, false);
+    const auto& target_frame = args.painting->frame;
 
     // グリッドに分割する
     std::vector<int> yticks, xticks;
@@ -87,13 +86,23 @@ public:
     const int W = xticks.size() - 1;
     LOG(INFO) << "H = " << H << ", W = " << W;
 
+    // 初期状態と目標状態の間の similarity の累積和を求めておく
+    // O(height * width)
+    constexpr double kAlpha = SimilarityChecker::alpha;
+    auto similarity_sums = CreateVector<double>(height + 1, width + 1, 0.0);
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        similarity_sums[y + 1][x + 1] = similarity_sums[y][x + 1] + similarity_sums[y + 1][x] - similarity_sums[y][x] + kAlpha * SimilarityChecker::pixelDiff(initial_frame[x + y * width], target_frame[x + y * width]);
+      }
+    }
+
     // グリッドに沿った長方形を color move で平均色に塗ったときのコストを求める
     // move のコストと similarity のコストを両方足しておく
     // O(height * width * (HW)^2)
-    constexpr double kAlpha = SimilarityChecker::alpha;
+    constexpr double kInfinity = std::numeric_limits<double>::infinity();
     auto colors = CreateVector<Color>(H, H + 1, W, W + 1, Color());
-    auto color_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
-    auto similarity_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
+    auto color_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
+    auto similarity_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
 
 #pragma omp parallel num_threads(num_threads) if(num_threads > 1)
     {
@@ -112,16 +121,12 @@ public:
           const double multiplier = 1.0 * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l]));
           if (multiplier < prune_threshold) continue;  // 面積が大きい領域は、 geometricMedianColor() が重い && 単色でまとめて塗る可能性が低いので枝刈りする
 
-          colors[b][t][l][r] = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
+          const auto color = geometricMedianColor(*args.painting, Point(xticks[l], yticks[b]), Point(xticks[r], yticks[t]), false, 10).value();
+          colors[b][t][l][r] = color;
           double cost = 0.0;
           for (int y = yticks[b]; y < yticks[t]; ++y) {
             for (int x = xticks[l]; x < xticks[r]; ++x) {
-              double distance2 = 0.0;
-              for (int c = 0; c < 4; ++c) {
-                const int diff = get_value(y, x, c) - colors[b][t][l][r][c];
-                distance2 += diff * diff;
-              }
-              cost += std::sqrt(distance2);
+              cost += SimilarityChecker::pixelDiff(target_frame[x + y * width], color);
             }
           }
           similarity_costs[b][t][l][r] = kAlpha * cost;
@@ -134,13 +139,20 @@ public:
     // Line cut move で分割する手順を区間 DP で求める
     // O((H+W) * (HW)^2)
     auto best_divisions = CreateVector<int>(H, H + 1, W, W + 1, 3, -1);
-    auto best_costs = CreateVector<double>(H, H + 1, W, W + 1, std::numeric_limits<double>::infinity());
+    auto best_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
+    auto best_uncolored_divisions = CreateVector<int>(H, H + 1, W, W + 1, 3, -1);
+    auto best_uncolored_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
     for (int h = 1; h <= H; ++h) {
       for (int w = 1; w <= W; ++w) {
         for (int b = 0; b + h <= H; ++b) {
           const int t = b + h;
           for (int l = 0; l + w <= W; ++l) {
             const int r = l + w;
+
+            auto& best_uncolored_cost = best_uncolored_costs[b][t][l][r];
+            best_uncolored_cost = similarity_sums[yticks[t]][xticks[r]] + similarity_sums[yticks[b]][xticks[l]] - similarity_sums[yticks[t]][xticks[l]] - similarity_sums[yticks[b]][xticks[r]];
+            best_uncolored_divisions[b][t][l][r] = {-1, -1, -2};
+
             auto& best_cost = best_costs[b][t][l][r];
             best_cost = color_costs[b][t][l][r];
             const int point_cut_cost = std::round(1.0 * PointCutInstruction::kBaseCost * height * width / ((yticks[t] - yticks[b]) * (xticks[r] - xticks[l])));
@@ -149,6 +161,14 @@ public:
             if (allow_point_cut) {
               for (int my = b + 1; my < t; ++my) {
                 for (int mx = l + 1; mx < r; ++mx) {
+                  { // まだ色を塗っていない場合
+                    // Point cut してから再帰的に処理する
+                    const double cost = point_cut_cost + best_uncolored_costs[b][my][l][mx] + best_uncolored_costs[b][my][mx][r] + best_uncolored_costs[my][t][l][mx] + best_uncolored_costs[my][t][mx][r];
+                    if (cost < best_uncolored_cost) {
+                      best_uncolored_cost = cost;
+                      best_uncolored_divisions[b][t][l][r] = {my, mx, -1};
+                    }
+                  }
                   { // Point cut してから再帰的に処理する
                     const double cost = point_cut_cost + best_costs[b][my][l][mx] + best_costs[b][my][mx][r] + best_costs[my][t][l][mx] + best_costs[my][t][mx][r];
                     if (cost < best_cost) {
@@ -188,6 +208,14 @@ public:
               }
             }
             for (int m = b + 1; m < t; ++m) {
+              { // まだ色を塗っていない場合
+                // Line cut してから上下を再帰的に処理する
+                const double cost = cut_cost + best_uncolored_costs[b][m][l][r] + best_uncolored_costs[m][t][l][r];
+                if (cost < best_uncolored_cost) {
+                  best_uncolored_cost = cost;
+                  best_uncolored_divisions[b][t][l][r] = {m, -1, -1};
+                }
+              }
               { // Line cut してから上下を再帰的に処理する
                 const double cost = cut_cost + best_costs[b][m][l][r] + best_costs[m][t][l][r];
                 if (cost < best_cost) {
@@ -211,6 +239,14 @@ public:
               }
             }
             for (int m = l + 1; m < r; ++m) {
+              { // まだ色を塗っていない場合
+                // Line cut してから左右を再帰的に処理する
+                const double cost = cut_cost + best_uncolored_costs[b][t][l][m] + best_uncolored_costs[b][t][m][r];
+                if (cost < best_uncolored_cost) {
+                  best_uncolored_cost = cost;
+                  best_uncolored_divisions[b][t][l][r] = {-1, m, -1};
+                }
+              }
               { // Line cut してから左右を再帰的に処理する
                 const double cost = cut_cost + best_costs[b][t][l][m] + best_costs[b][t][m][r];
                 if (cost < best_cost) {
@@ -233,11 +269,15 @@ public:
                 }
               }
             }
+            if (best_cost < best_uncolored_cost) {
+              best_uncolored_cost = best_cost;
+              best_uncolored_divisions[b][t][l][r] = best_divisions[b][t][l][r];
+            }
           }
         }
       }
     }
-    LOG(INFO) << fmt::format("best cost = {0}", best_costs[0][H][0][W]);
+    LOG(INFO) << fmt::format("best cost = {0}", best_uncolored_costs[0][H][0][W]);
 
     // 操作列を構築する
     SolverOutputs ret;
@@ -247,78 +287,78 @@ public:
     const auto add_comment = [&](const std::string& comment) {
       ret.solution.push_back(std::make_shared<CommentInstruction>(comment));
     };
-    add_comment(fmt::format("cost = {0}", static_cast<int>(std::round(best_costs[0][H][0][W]))));
+    add_comment(fmt::format("cost = {0}", static_cast<int>(std::round(best_uncolored_costs[0][H][0][W]))));
     if (!inherit_ticks) {
       add_comment(fmt::format("num_intervals = {0}", num_intervals));
     }
-    std::vector<std::tuple<int, int, int, int, std::string>> stack;
-    stack.emplace_back(0, H, 0, W, top_level_id);
+    std::vector<std::tuple<int, int, int, int, std::string, bool>> stack;
+    stack.emplace_back(0, H, 0, W, top_level_id, false);
     while (!stack.empty()) {
-      const auto [b, t, l, r, name] = stack.back();
+      const auto [b, t, l, r, name, colored] = stack.back();
       stack.pop_back();
-      const auto& division = best_divisions[b][t][l][r];
+      const auto& division = colored ? best_divisions[b][t][l][r] : best_uncolored_divisions[b][t][l][r];
       if (division[0] >= 0 && division[1] >= 0) {
         assert(allow_point_cut);
         if (division[2] == 0) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][l][division[1]]));
           ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
-          stack.emplace_back(b, division[0], division[1], r, name + ".1");
-          stack.emplace_back(division[0], t, l, division[1], name + ".3");
-          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+          stack.emplace_back(b, division[0], division[1], r, name + ".1", true);
+          stack.emplace_back(division[0], t, l, division[1], name + ".3", true);
+          stack.emplace_back(division[0], t, division[1], r, name + ".2", true);
         } else if (division[2] == 1) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][division[1]][r]));
           ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
-          stack.emplace_back(b, division[0], l, division[1], name + ".0");
-          stack.emplace_back(division[0], t, l, division[1], name + ".3");
-          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+          stack.emplace_back(b, division[0], l, division[1], name + ".0", true);
+          stack.emplace_back(division[0], t, l, division[1], name + ".3", true);
+          stack.emplace_back(division[0], t, division[1], r, name + ".2", true);
         } else if (division[2] == 3) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[division[0]][t][l][division[1]]));
           ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
-          stack.emplace_back(b, division[0], l, division[1], name + ".0");
-          stack.emplace_back(b, division[0], division[1], r, name + ".1");
-          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+          stack.emplace_back(b, division[0], l, division[1], name + ".0", true);
+          stack.emplace_back(b, division[0], division[1], r, name + ".1", true);
+          stack.emplace_back(division[0], t, division[1], r, name + ".2", true);
         } else if (division[2] == 2) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[division[0]][t][division[1]][r]));
           ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
-          stack.emplace_back(b, division[0], l, division[1], name + ".0");
-          stack.emplace_back(b, division[0], division[1], r, name + ".1");
-          stack.emplace_back(division[0], t, l, division[1], name + ".3");
+          stack.emplace_back(b, division[0], l, division[1], name + ".0", true);
+          stack.emplace_back(b, division[0], division[1], r, name + ".1", true);
+          stack.emplace_back(division[0], t, l, division[1], name + ".3", true);
         } else {
           ret.solution.push_back(std::make_shared<PointCutInstruction>(name, Point(xticks[division[1]], yticks[division[0]]))); 
-          stack.emplace_back(b, division[0], l, division[1], name + ".0");
-          stack.emplace_back(b, division[0], division[1], r, name + ".1");
-          stack.emplace_back(division[0], t, l, division[1], name + ".3");
-          stack.emplace_back(division[0], t, division[1], r, name + ".2");
+          stack.emplace_back(b, division[0], l, division[1], name + ".0", colored);
+          stack.emplace_back(b, division[0], division[1], r, name + ".1", colored);
+          stack.emplace_back(division[0], t, l, division[1], name + ".3", colored);
+          stack.emplace_back(division[0], t, division[1], r, name + ".2", colored);
         }
       } else if (division[0] >= 0) {
         if (division[2] == 0) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][division[0]][l][r]));
           ret.solution.push_back(std::make_shared<HorizontalCutInstruction>(name, yticks[division[0]]));
-          stack.emplace_back(division[0], t, l, r, name + ".1");
+          stack.emplace_back(division[0], t, l, r, name + ".1", true);
         } else if (division[2] == 1) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[division[0]][t][l][r]));
           ret.solution.push_back(std::make_shared<HorizontalCutInstruction>(name, yticks[division[0]]));
-          stack.emplace_back(b, division[0], l, r, name + ".0");
+          stack.emplace_back(b, division[0], l, r, name + ".0", true);
         } else {
           ret.solution.push_back(std::make_shared<HorizontalCutInstruction>(name, yticks[division[0]]));
-          stack.emplace_back(b, division[0], l, r, name + ".0");
-          stack.emplace_back(division[0], t, l, r, name + ".1");
+          stack.emplace_back(b, division[0], l, r, name + ".0", colored);
+          stack.emplace_back(division[0], t, l, r, name + ".1", colored);
         }
       } else if (division[1] >= 0) {
         if (division[2] == 0) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][l][division[1]]));
           ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
-          stack.emplace_back(b, t, division[1], r, name + ".1");
+          stack.emplace_back(b, t, division[1], r, name + ".1", true);
         } else if (division[2] == 1) {
           ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][division[1]][r]));
           ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
-          stack.emplace_back(b, t, l, division[1], name + ".0");
+          stack.emplace_back(b, t, l, division[1], name + ".0", true);
         } else {
           ret.solution.push_back(std::make_shared<VerticalCutInstruction>(name, xticks[division[1]]));
-          stack.emplace_back(b, t, l, division[1], name + ".0");
-          stack.emplace_back(b, t, division[1], r, name + ".1");
+          stack.emplace_back(b, t, l, division[1], name + ".0", colored);
+          stack.emplace_back(b, t, division[1], r, name + ".1", colored);
         }
-      } else {
+      } else if (division[2] == -1) {
         ret.solution.push_back(std::make_shared<ColorInstruction>(name, colors[b][t][l][r]));
       }
     }
