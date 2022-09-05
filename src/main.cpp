@@ -48,16 +48,11 @@ std::string getCommitId() {
   return "NA";
 }
 
-#ifdef _WIN32
 const std::vector<std::string> base_dir_candidates = {
-  "..\\..\\..", // ./vs/x64/Release
-  "..", // ./vs
+  ".", // ./
+  "..", // ./src (Linux), ./vs (Windows)
+  "..\\..\\..", // ./vs/x64/(Release|Debug) (Windows)
 };
-#else
-const std::vector<std::string> base_dir_candidates = {
-  "..", // ./src
-};
-#endif
 
 std::optional<std::filesystem::path> guessProblemFile(int pid) {
   for (auto base_dir : base_dir_candidates) {
