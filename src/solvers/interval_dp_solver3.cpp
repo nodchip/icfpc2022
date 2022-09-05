@@ -153,9 +153,10 @@ public:
 
     // Line cut move で分割する手順を区間 DP で求める
     // O((H+W) * (HW)^2)
-    auto best_divisions = CreateVector<int8_t>(H, H + 1, W, W + 1, 4, -1);
+    const std::array<int8_t, 4> kInit = { -1, -1, -1, -1 };
+    auto best_divisions = CreateVector<std::array<int8_t, 4>>(H, H + 1, W, W + 1, kInit);
     auto best_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
-    auto best_uncolored_divisions = CreateVector<int8_t>(H, H + 1, W, W + 1, 4, -1);
+    auto best_uncolored_divisions = CreateVector<std::array<int8_t, 4>>(H, H + 1, W, W + 1, kInit);
     auto best_uncolored_costs = CreateVector<double>(H, H + 1, W, W + 1, kInfinity);
     for (int h = 1; h <= H; ++h) {
       for (int w = 1; w <= W; ++w) {
